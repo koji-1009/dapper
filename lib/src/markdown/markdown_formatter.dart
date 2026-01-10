@@ -5,7 +5,7 @@ library;
 
 import 'package:markdown/markdown.dart' as md;
 
-import '../formatter/options.dart';
+import '../options.dart';
 import 'ast_printer.dart';
 import 'definition_list.dart';
 import 'front_matter.dart';

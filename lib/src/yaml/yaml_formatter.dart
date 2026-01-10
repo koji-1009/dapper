@@ -5,7 +5,7 @@ library;
 
 import 'package:yaml/yaml.dart';
 
-import '../formatter/options.dart';
+import '../options.dart';
 
 /// Formats a YAML document according to the specified options.
 ///

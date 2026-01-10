@@ -5,7 +5,7 @@ library;
 
 import 'package:markdown/markdown.dart' as md;
 
-import '../formatter/options.dart';
+import '../options.dart';
 import '../utils/text_utils.dart';
 import 'normalizer.dart';
 

@@ -148,6 +148,19 @@ _ProcessResult _processPath(
   return _ProcessResult.unchanged;
 }
 
+// Directories to ignore during recursive scanning.
+// These typically contain generated files, build artifacts, or IDE settings
+// that should not be formatted.
+// Note: .github is NOT included here because we want to format workflow files.
+const _ignoredDirectories = {
+  '.git',
+  '.dart_tool',
+  '.idea',
+  '.vscode',
+  '.fvm',
+  'build',
+};
+
 _ProcessResult _processDirectory(
   String dirPath,
   String outputMode,
@@ -156,16 +169,37 @@ _ProcessResult _processDirectory(
   final dir = Directory(dirPath);
   var result = _ProcessResult.unchanged;
 
-  for (final entity in dir.listSync(recursive: true)) {
-    if (entity is File && _isFormattableFile(entity.path)) {
-      final fileResult = _processFile(entity.path, outputMode, options);
-      if (fileResult == _ProcessResult.error) {
-        result = _ProcessResult.error;
-      } else if (fileResult == _ProcessResult.changed &&
-          result != _ProcessResult.error) {
-        result = _ProcessResult.changed;
+  try {
+    for (final entity in dir.listSync(recursive: false)) {
+      final name = Uri.file(
+        entity.path,
+      ).pathSegments.lastWhere((s) => s.isNotEmpty);
+
+      if (_ignoredDirectories.contains(name)) {
+        continue;
+      }
+
+      if (entity is Directory) {
+        final subResult = _processDirectory(entity.path, outputMode, options);
+        if (subResult == _ProcessResult.error) {
+          result = _ProcessResult.error;
+        } else if (subResult == _ProcessResult.changed &&
+            result != _ProcessResult.error) {
+          result = _ProcessResult.changed;
+        }
+      } else if (entity is File && _isFormattableFile(entity.path)) {
+        final fileResult = _processFile(entity.path, outputMode, options);
+        if (fileResult == _ProcessResult.error) {
+          result = _ProcessResult.error;
+        } else if (fileResult == _ProcessResult.changed &&
+            result != _ProcessResult.error) {
+          result = _ProcessResult.changed;
+        }
       }
     }
+  } catch (e) {
+    stderr.writeln('Error analyzing directory "$dirPath": $e');
+    return _ProcessResult.error;
   }
 
   return result;

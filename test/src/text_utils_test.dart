@@ -82,5 +82,45 @@ void main() {
     test('returns empty for zero count', () {
       expect(repeat('ab', 0), '');
     });
+
+    test('returns empty for negative count', () {
+      expect(repeat('ab', -1), '');
+    });
+  });
+
+  // Additional tests for 100% coverage
+
+  group('wrapText edge cases', () {
+    test('throws for zero width', () {
+      expect(() => wrapText('text', 0), throwsArgumentError);
+    });
+
+    test('throws for negative width', () {
+      expect(() => wrapText('text', -1), throwsArgumentError);
+    });
+  });
+
+  group('trimTrailingWhitespace', () {
+    test('removes trailing spaces from each line', () {
+      expect(trimTrailingWhitespace('hello  \nworld  '), 'hello\nworld');
+    });
+
+    test('handles empty input', () {
+      expect(trimTrailingWhitespace(''), '');
+    });
+  });
+
+  group('indent with tabs', () {
+    test('uses tabs when useTabs is true', () {
+      expect(indent(4, useTabs: true, tabWidth: 2), '\t\t');
+    });
+
+    test('uses mixed tabs and spaces', () {
+      expect(indent(5, useTabs: true, tabWidth: 2), '\t\t ');
+    });
+
+    test('uses only spaces for width less than tabWidth', () {
+      expect(indent(1, useTabs: true, tabWidth: 2), ' ');
+    });
   });
 }

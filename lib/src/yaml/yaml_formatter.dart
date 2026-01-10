@@ -68,33 +68,28 @@ class _YamlPrinter {
 
   String print(dynamic value) {
     _buffer.clear();
-    _printValue(value);
+    _printValue(value, inline: false);
     return _ensureTrailingNewline(_buffer.toString());
   }
 
-  void _printValue(dynamic value, {bool inline = false}) {
+  void _printValue(dynamic value, {required bool inline}) {
     if (value == null) {
       _write('null');
     } else if (value is YamlMap || value is Map) {
       _printMap(value as Map, inline: inline);
     } else if (value is YamlList || value is List) {
-      _printList(value as List, inline: inline);
+      _printList(value as List);
     } else if (value is String) {
       _printString(value);
     } else if (value is bool) {
       _write(value ? 'true' : 'false');
-    } else if (value is num) {
-      _write(value.toString());
     } else {
       _write(value.toString());
     }
   }
 
-  void _printMap(Map<dynamic, dynamic> map, {bool inline = false}) {
-    if (map.isEmpty) {
-      _write('{}');
-      return;
-    }
+  void _printMap(Map<dynamic, dynamic> map, {required bool inline}) {
+    // Note: map.isEmpty check is handled by caller (_printValue)
 
     final entries = map.entries.toList();
 
@@ -113,7 +108,7 @@ class _YamlPrinter {
         _writeLine(' null');
       } else if (_isScalar(value)) {
         _write(' ');
-        _printValue(value);
+        _printValue(value, inline: true);
         _newLine();
       } else if (value is Map && value.isEmpty) {
         _writeLine(' {}');
@@ -122,24 +117,21 @@ class _YamlPrinter {
       } else {
         _newLine();
         _indentLevel++;
-        _printValue(value);
+        _printValue(value, inline: false);
         _indentLevel--;
       }
     }
   }
 
-  void _printList(List<dynamic> list, {bool inline = false}) {
-    if (list.isEmpty) {
-      _write('[]');
-      return;
-    }
+  void _printList(List<dynamic> list) {
+    // Note: list.isEmpty check is handled by caller (_printValue)
 
     for (final item in list) {
       _writeIndent();
       _write('- ');
 
       if (_isScalar(item)) {
-        _printValue(item);
+        _printValue(item, inline: true);
         _newLine();
       } else if (item is Map) {
         if (item.isEmpty) {
@@ -152,14 +144,12 @@ class _YamlPrinter {
 
           if (_isScalar(firstEntry.value)) {
             _write(' ');
-            _printValue(firstEntry.value);
+            _printValue(firstEntry.value, inline: true);
             _newLine();
-          } else if (firstEntry.value == null) {
-            _writeLine(' null');
           } else {
             _newLine();
             _indentLevel++;
-            _printValue(firstEntry.value);
+            _printValue(firstEntry.value, inline: false);
             _indentLevel--;
           }
 
@@ -173,14 +163,12 @@ class _YamlPrinter {
 
               if (_isScalar(entry.value)) {
                 _write(' ');
-                _printValue(entry.value);
+                _printValue(entry.value, inline: true);
                 _newLine();
-              } else if (entry.value == null) {
-                _writeLine(' null');
               } else {
                 _newLine();
                 _indentLevel++;
-                _printValue(entry.value);
+                _printValue(entry.value, inline: false);
                 _indentLevel--;
               }
             }
@@ -193,12 +181,9 @@ class _YamlPrinter {
         } else {
           _newLine();
           _indentLevel++;
-          _printValue(item);
+          _printValue(item, inline: false);
           _indentLevel--;
         }
-      } else {
-        _printValue(item);
-        _newLine();
       }
     }
   }

@@ -13,6 +13,10 @@ void main() {
       expect(formatter.format(''), '');
     });
 
+    test('formats whitespace-only string', () {
+      expect(formatter.format('   \n  '), '');
+    });
+
     test('formats simple key-value pairs', () {
       final input = '''name:   myapp
 version: 1.0.0''';
@@ -55,13 +59,13 @@ version: 1.0.0''';
       expect(result, contains('name: Bob'));
     });
 
-    test('handles empty maps', () {
+    test('handles empty maps as values', () {
       final input = 'config: {}';
       final result = formatter.format(input);
       expect(result.trim(), 'config: {}');
     });
 
-    test('handles empty lists', () {
+    test('handles empty lists as values', () {
       final input = 'items: []';
       final result = formatter.format(input);
       expect(result.trim(), 'items: []');
@@ -101,6 +105,130 @@ ratio: 1.5''';
       final result = formatter.format(input);
       expect(result, input);
     });
+
+    // Additional tests for 100% coverage
+
+    test('handles top-level null', () {
+      final result = formatter.format('null');
+      expect(result.trim(), 'null');
+    });
+
+    test('handles top-level list', () {
+      final input = '''- item1
+- item2''';
+      final result = formatter.format(input);
+      expect(result, contains('- item1'));
+      expect(result, contains('- item2'));
+    });
+
+    test('handles empty map in list', () {
+      final input = '''items:
+  - {}''';
+      final result = formatter.format(input);
+      expect(result, contains('- {}'));
+    });
+
+    test('handles empty list in list', () {
+      final input = '''items:
+  - []''';
+      final result = formatter.format(input);
+      expect(result, contains('- []'));
+    });
+
+    test('handles nested list in list', () {
+      final input = '''items:
+  - - nested1
+    - nested2''';
+      final result = formatter.format(input);
+      expect(result, contains('nested1'));
+      expect(result, contains('nested2'));
+    });
+
+    test('handles map with nested non-scalar first value in list', () {
+      final input = '''items:
+  - config:
+      nested: value''';
+      final result = formatter.format(input);
+      expect(result, contains('config:'));
+      expect(result, contains('nested: value'));
+    });
+
+    test('handles map with null first value in list', () {
+      final input = '''items:
+  - first: null
+    second: value''';
+      final result = formatter.format(input);
+      expect(result, contains('first: null'));
+      expect(result, contains('second: value'));
+    });
+
+    test('handles map with nested non-scalar remaining value in list', () {
+      final input = '''items:
+  - name: test
+    config:
+      key: value''';
+      final result = formatter.format(input);
+      expect(result, contains('name: test'));
+      expect(result, contains('config:'));
+      expect(result, contains('key: value'));
+    });
+
+    test('handles map with null remaining value in list', () {
+      final input = '''items:
+  - name: test
+    value: null''';
+      final result = formatter.format(input);
+      expect(result, contains('name: test'));
+      expect(result, contains('value: null'));
+    });
+
+    test('escapes special characters in strings', () {
+      final input = 'message: "line1\\nline2"';
+      final result = formatter.format(input);
+      expect(result, contains('message:'));
+    });
+
+    test('quotes strings starting with special characters', () {
+      final input = 'key: "#comment"';
+      final result = formatter.format(input);
+      expect(result, contains('"'));
+    });
+
+    test('quotes strings that look like booleans', () {
+      final input = 'value: "true"';
+      final result = formatter.format(input);
+      expect(result, contains('"true"'));
+    });
+
+    test('quotes strings with colons', () {
+      final input = 'url: "http://example.com"';
+      final result = formatter.format(input);
+      expect(result, contains('http://example.com'));
+    });
+
+    test('handles non-standard types by calling toString', () {
+      // This tests the fallback case in _printValue
+      final result = formatter.format('date: 2024-01-01');
+      expect(result, contains('2024-01-01'));
+    });
+
+    test('respects tabWidth option', () {
+      final customFormatter = YamlFormatter(const FormatOptions(tabWidth: 4));
+      final input = '''root:
+  nested: value''';
+      final result = customFormatter.format(input);
+      expect(result, contains('    nested'));
+    });
+
+    test('handles deeply nested structures', () {
+      final input = '''level1:
+  level2:
+    level3:
+      level4: value''';
+      final result = formatter.format(input);
+      expect(result, contains('level1:'));
+      expect(result, contains('level4: value'));
+    });
   });
 
   group('formatYaml convenience function', () {
@@ -115,6 +243,12 @@ ratio: 1.5''';
         options: const FormatOptions(tabWidth: 4),
       );
       expect(result, contains('name: test'));
+    });
+    test('handles unknown tags in list', () {
+      final formatter = YamlFormatter();
+      final input = '- !!custom value';
+      final result = formatter.format(input);
+      expect(result, contains('value'));
     });
   });
 }

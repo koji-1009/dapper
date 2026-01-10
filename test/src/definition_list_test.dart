@@ -91,4 +91,26 @@ Regular paragraph''';
       expect(result, contains(': Def 2b'));
     });
   });
+
+  group('parseDocumentSegments edge cases', () {
+    test('handles definition with blank line between definitions', () {
+      final input = '''Term
+: Def 1
+
+: Def 2''';
+      final segments = parseDocumentSegments(input);
+      expect(segments.length, greaterThanOrEqualTo(1));
+    });
+
+    test('handles consecutive definition lists', () {
+      final input = '''Term1
+: Def1
+
+Term2
+: Def2''';
+      final segments = parseDocumentSegments(input);
+      final dlSegments = segments.whereType<DefinitionListSegment>().toList();
+      expect(dlSegments.length, greaterThanOrEqualTo(1));
+    });
+  });
 }

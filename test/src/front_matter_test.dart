@@ -70,4 +70,27 @@ title: Not front matter
       expect(result, '# Content');
     });
   });
+
+  group('extractFrontMatter edge cases', () {
+    test('handles front matter with blank line after closing delimiter', () {
+      final input = '''---
+title: Test
+---
+
+# Content''';
+      final result = extractFrontMatter(input);
+      expect(result.hasFrontMatter, isTrue);
+      expect(result.content.trim(), '# Content');
+    });
+
+    test('handles front matter without blank line after closing delimiter', () {
+      final input = '''---
+title: Test
+---
+# Content''';
+      final result = extractFrontMatter(input);
+      expect(result.hasFrontMatter, isTrue);
+      expect(result.content.trim(), '# Content');
+    });
+  });
 }

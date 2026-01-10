@@ -247,4 +247,251 @@ Term 2
       expect(result, contains('_emphasis_'));
     });
   });
+
+  // Additional tests for 100% coverage
+  group('Additional coverage tests', () {
+    late MarkdownFormatter formatter;
+
+    setUp(() {
+      formatter = MarkdownFormatter();
+    });
+
+    group('proseWrap always', () {
+      late MarkdownFormatter wrapFormatter;
+
+      setUp(() {
+        wrapFormatter = MarkdownFormatter(
+          const FormatOptions(proseWrap: ProseWrap.always, printWidth: 30),
+        );
+      });
+
+      test('wraps long checkbox items', () {
+        final result = wrapFormatter.format(
+          '- [ ] This is a very long checkbox item that should wrap',
+        );
+        expect(result, contains('[ ]'));
+        expect(result, contains('checkbox'));
+      });
+
+      test('wraps long blockquotes', () {
+        final result = wrapFormatter.format(
+          '> This is a very long blockquote that should wrap at the specified width',
+        );
+        expect(result, contains('>'));
+      });
+
+      test('wraps long list items', () {
+        final result = wrapFormatter.format(
+          '- This is a very long list item that should wrap at the width',
+        );
+        expect(result, contains('-'));
+      });
+
+      test('wraps definition descriptions', () {
+        final result = wrapFormatter.format(
+          'Term\n: This is a very long definition that should wrap nicely',
+        );
+        expect(result, contains('Term'));
+        expect(result, contains(':'));
+      });
+    });
+
+    group('All heading levels', () {
+      test('formats h1 through h6', () {
+        expect(formatter.format('# H1').trim(), '# H1');
+        expect(formatter.format('## H2').trim(), '## H2');
+        expect(formatter.format('### H3').trim(), '### H3');
+        expect(formatter.format('#### H4').trim(), '#### H4');
+        expect(formatter.format('##### H5').trim(), '##### H5');
+        expect(formatter.format('###### H6').trim(), '###### H6');
+      });
+    });
+
+    group('Links with titles', () {
+      test('formats link with title', () {
+        final result = formatter.format('[text](url "title")');
+        expect(result, contains('[text]'));
+        expect(result, contains('url'));
+      });
+    });
+
+    group('Images', () {
+      test('formats image with title', () {
+        final result = formatter.format('![alt](src "title")');
+        expect(result, contains('![alt]'));
+        expect(result, contains('src'));
+      });
+    });
+
+    group('Line breaks', () {
+      test('formats hard line breaks', () {
+        final result = formatter.format('Line 1  \nLine 2');
+        expect(result, contains('Line 1'));
+        expect(result, contains('Line 2'));
+      });
+    });
+
+    group('Tables', () {
+      test('formats table with center alignment', () {
+        final input = '''| Center |
+|:------:|
+| data |''';
+        final result = formatter.format(input);
+        expect(result, contains('Center'));
+        expect(result, contains(':'));
+      });
+
+      test('formats table with right alignment', () {
+        final input = '''| Right |
+|------:|
+| data |''';
+        final result = formatter.format(input);
+        expect(result, contains('Right'));
+      });
+
+      test('formats table with left alignment', () {
+        final input = '''| Left |
+|:------|
+| data |''';
+        final result = formatter.format(input);
+        expect(result, contains('Left'));
+      });
+
+      test('formats empty table', () {
+        final result = formatter.format('| |\n|-|');
+        expect(result, contains('|'));
+      });
+
+      test('handles table with multiple columns', () {
+        final input = '''| A | B | C |
+|---|---|---|
+| 1 | 2 | 3 |''';
+        final result = formatter.format(input);
+        expect(result, contains('A'));
+        expect(result, contains('B'));
+        expect(result, contains('C'));
+      });
+    });
+
+    group('Complex list items', () {
+      test('handles list with nested paragraphs', () {
+        final input = '''- Item 1
+
+  Continued paragraph
+
+- Item 2''';
+        final result = formatter.format(input);
+        expect(result, contains('Item 1'));
+        expect(result, contains('Item 2'));
+      });
+
+      test('handles ordered list with many items', () {
+        final input = '''1. One
+2. Two
+3. Three
+4. Four
+5. Five
+6. Six
+7. Seven
+8. Eight
+9. Nine
+10. Ten''';
+        final result = formatter.format(input);
+        expect(result, contains('10.'));
+      });
+    });
+
+    group('Code blocks', () {
+      test('formats code block without language', () {
+        final input = '''```
+code here
+```''';
+        final result = formatter.format(input);
+        expect(result, contains('```'));
+        expect(result, contains('code here'));
+      });
+
+      test('formats code block with trailing newline', () {
+        final input = '''```js
+code
+```''';
+        final result = formatter.format(input);
+        expect(result, contains('```js'));
+      });
+    });
+
+    group('Nested formatting', () {
+      test('handles strong inside emphasis', () {
+        final result = formatter.format('_**nested**_');
+        expect(result, contains('_'));
+        expect(result, contains('**'));
+      });
+
+      test('handles emphasis inside strong', () {
+        final result = formatter.format('**_nested_**');
+        expect(result, contains('**'));
+        expect(result, contains('_'));
+      });
+
+      test('handles code inside link', () {
+        final result = formatter.format('[`code`](url)');
+        expect(result, contains('`code`'));
+        expect(result, contains('url'));
+      });
+    });
+
+    group('proseWrap never', () {
+      test('never wraps long paragraphs', () {
+        final neverFormatter = MarkdownFormatter(
+          const FormatOptions(proseWrap: ProseWrap.never, printWidth: 10),
+        );
+        final result = neverFormatter.format('This is a very long line');
+        expect(result.trim(), 'This is a very long line');
+      });
+    });
+
+    group('Definition list with markdown', () {
+      test('formats markdown followed by definition list', () {
+        final input = '''# Heading
+
+Some paragraph text.
+
+Term
+: Definition
+''';
+        final result = formatter.format(input);
+        expect(result, contains('# Heading'));
+        expect(result, contains('Some paragraph text'));
+        expect(result, contains('Term'));
+        expect(result, contains(': Definition'));
+      });
+
+      test('formats definition list followed by markdown', () {
+        final input = '''Term
+: Definition
+
+# Next Section
+''';
+        final result = formatter.format(input);
+        expect(result, contains('Term'));
+        expect(result, contains(': Definition'));
+        expect(result, contains('# Next Section'));
+      });
+
+      test('formats markdown between definition lists', () {
+        final input = '''Term1
+: Def1
+
+Paragraph between.
+
+Term2
+: Def2
+''';
+        final result = formatter.format(input);
+        expect(result, contains('Term1'));
+        expect(result, contains('Paragraph between'));
+        expect(result, contains('Term2'));
+      });
+    });
+  });
 }

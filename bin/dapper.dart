@@ -222,10 +222,8 @@ String _formatFile(String filePath, String content, FormatOptions options) {
     return formatMarkdown(content, options: options);
   }
 
-  // TODO: Add YAML formatting when implemented
   if (lowerPath.endsWith('.yaml') || lowerPath.endsWith('.yml')) {
-    // For now, return unchanged
-    return content;
+    return formatYaml(content, options: options);
   }
 
   return content;

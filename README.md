@@ -15,6 +15,13 @@ A simple Markdown (and YAML) formatter for Dart, inspired by Prettier.
 - **Setext headings**: Converted to ATX style (`#`)
 - **Deep nesting**: Supports arbitrary nesting levels
 
+### YAML Formatting
+- **Consistent indentation**: Normalizes to 2-space indent
+- **Map formatting**: Key-value pairs with proper spacing
+- **List formatting**: Block style with proper indentation
+- **Nested structures**: Deep map/list nesting
+- **String quoting**: Automatic quoting for special values
+
 ### Format Options
 - `printWidth`: Maximum line width (default: 80)
 - `tabWidth`: Spaces per indentation level (default: 2)

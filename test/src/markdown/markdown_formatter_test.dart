@@ -175,6 +175,27 @@ Term 2
         expect(result, contains('- item 1'));
         expect(result, contains('- item 2'));
       });
+
+      test('normalizes spaces in list items', () {
+        final input = '''
+*   Item 1
+*    Item 2
+''';
+        final result = formatter.format(input);
+        expect(result, contains('- Item 1'));
+        expect(result, contains('- Item 2'));
+        expect(result, isNot(contains('-   Item 1')));
+      });
+
+      test('normalizes spaces in headings', () {
+        final result = formatter.format('#    Heading');
+        expect(result.trim(), '# Heading');
+      });
+
+      test('normalizes spaces in blockquotes', () {
+        final result = formatter.format('>    Blockquote');
+        expect(result.trim(), '> Blockquote');
+      });
     });
 
     group('Table formatting', () {

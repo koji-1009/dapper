@@ -229,7 +229,7 @@ class MarkdownPrinter {
           _writeLine(lines[i]);
         }
       } else {
-        _writeLine(content);
+        _writeLine(content.trim());
       }
       return;
     }
@@ -259,7 +259,7 @@ class MarkdownPrinter {
             normalizeWhitespace(content.toString()),
             options.printWidth - savedIndent - 2,
           )
-        : [content.toString()];
+        : [content.toString().trim()];
 
     _currentIndent = savedIndent;
 

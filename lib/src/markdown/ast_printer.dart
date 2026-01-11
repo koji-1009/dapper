@@ -234,9 +234,35 @@ class MarkdownPrinter {
       return;
     }
 
-    // Complex case: contains block elements
-    for (final child in children) {
-      _printNode(child);
+    // Complex case: contains block elements (e.g., nested lists)
+    // First, collect leading inline content
+    final inlineContent = StringBuffer();
+    var blockStartIndex = 0;
+
+    for (var i = 0; i < children.length; i++) {
+      final child = children[i];
+      if (_isInline(child)) {
+        inlineContent.write(_renderInlineNode(child));
+      } else {
+        blockStartIndex = i;
+        break;
+      }
+    }
+
+    // Write inline content first
+    final inlineText = inlineContent.toString().trim();
+    if (inlineText.isNotEmpty) {
+      _writeLine(inlineText);
+    } else {
+      _newLine();
+    }
+
+    // Then process block elements
+    for (var i = blockStartIndex; i < children.length; i++) {
+      final child = children[i];
+      if (!_isInline(child)) {
+        _printNode(child);
+      }
     }
   }
 

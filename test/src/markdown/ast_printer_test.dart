@@ -52,6 +52,25 @@ void main() {
       expect(result, contains('- Item 2'));
     });
 
+    test('prints nested unordered list with proper indentation', () {
+      // Create: - item 1
+      //           - nested item
+      //             - deeply nested
+      final deepLi = md.Element('li', [md.Text('deeply nested')]);
+      final deepUl = md.Element('ul', [deepLi]);
+      final nestedLi = md.Element('li', [md.Text('nested item'), deepUl]);
+      final nestedUl = md.Element('ul', [nestedLi]);
+      final topLi = md.Element('li', [md.Text('item 1'), nestedUl]);
+      final topUl = md.Element('ul', [topLi]);
+
+      final result = printer.print([topUl]);
+
+      // Each list item should be on its own line
+      expect(result, contains('- item 1\n'));
+      expect(result, contains('  - nested item\n'));
+      expect(result, contains('    - deeply nested'));
+    });
+
     test('prints ordered list', () {
       final li1 = md.Element('li', [md.Text('First')]);
       final li2 = md.Element('li', [md.Text('Second')]);

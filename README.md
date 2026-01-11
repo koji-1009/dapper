@@ -136,12 +136,12 @@ dapper:
 
 ## Format Options
 
-| Option       | Type   | Default    | Markdown | YAML |
-| ------------ | ------ | ---------- | -------- | ---- |
-| `printWidth` | int    | 80         | ✓        | ✗    |
-| `tabWidth`   | int    | 2          | ✓        | ✓    |
-| `proseWrap`  | string | `preserve` | ✓        | ✗    |
-| `ulStyle`    | string | `dash`     | ✓        | ✗    |
+| Option        | Type   | Default    | Markdown | YAML |
+| ------------- | ------ | ---------- | -------- | ---- |
+| `print_width` | int    | 80         | ✓        | ✗    |
+| `tab_width`   | int    | 2          | ✓        | ✓    |
+| `prose_wrap`  | string | `preserve` | ✓        | ✗    |
+| `ul_style`    | string | `dash`     | ✓        | ✗    |
 
 ## Dropped Features
 

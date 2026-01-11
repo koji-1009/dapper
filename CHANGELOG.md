@@ -1,8 +1,14 @@
+## 1.0.3
+
+### Added
+
+- Add interactive demo page with GitHub Pages support
+
 ## 1.0.2
 
 ### Fixed
 
-- Correctly handle nested lists with varying indentation levels
+- Fix bug where nested list items were rendered on the same line instead of new lines
 
 ## 1.0.1
 

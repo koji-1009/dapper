@@ -1,5 +1,9 @@
 # Dapper
 
+[![Test](https://github.com/koji-1009/dapper/actions/workflows/test.yml/badge.svg)](https://github.com/koji-1009/dapper/actions/workflows/test.yml)
+[![Analyze](https://github.com/koji-1009/dapper/actions/workflows/analyze.yml/badge.svg)](https://github.com/koji-1009/dapper/actions/workflows/analyze.yml)
+[![codecov](https://codecov.io/gh/koji-1009/dapper/graph/badge.svg)](https://codecov.io/gh/koji-1009/dapper)
+
 A simple Markdown and YAML formatter for Dart, inspired by Prettier.
 
 ## Features

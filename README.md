@@ -5,6 +5,7 @@ A simple Markdown (and YAML) formatter for Dart, inspired by Prettier.
 ## Features
 
 ### Markdown Formatting
+
 - **Emphasis normalization**: `*text*` → `_text_`
 - **List formatting**: Ordered/unordered lists with proper alignment
 - **Code block preservation**: Maintains code block content
@@ -16,6 +17,7 @@ A simple Markdown (and YAML) formatter for Dart, inspired by Prettier.
 - **Deep nesting**: Supports arbitrary nesting levels
 
 ### YAML Formatting
+
 - **Consistent indentation**: Normalizes to 2-space indent
 - **Map formatting**: Key-value pairs with proper spacing
 - **List formatting**: Block style with proper indentation
@@ -23,6 +25,7 @@ A simple Markdown (and YAML) formatter for Dart, inspired by Prettier.
 - **String quoting**: Automatic quoting for special values
 
 ### Format Options
+
 - `printWidth`: Maximum line width (default: 80)
 - `tabWidth`: Spaces per indentation level (default: 2)
 - `proseWrap`: `always` | `never` | `preserve`
@@ -103,8 +106,8 @@ Usage: dapper [options] <files or directories...>
 
 The following features are intentionally not supported to keep the implementation simple:
 
-| Feature | Reason |
-|---------|--------|
+| Feature        | Reason                                         |
+| -------------- | ---------------------------------------------- |
 | HTML embedding | Difficult to preserve exactly through parsing. |
 
 ## Development

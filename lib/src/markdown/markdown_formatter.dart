@@ -27,6 +27,7 @@ import 'front_matter.dart';
 /// // _world_
 /// ```
 class MarkdownFormatter {
+  /// The options used for formatting.
   final FormatOptions options;
 
   /// Creates a new Markdown formatter with the given options.

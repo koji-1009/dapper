@@ -27,6 +27,7 @@ import '../options.dart';
 /// //     sdk: flutter
 /// ```
 class YamlFormatter {
+  /// The options used for formatting.
   final FormatOptions options;
 
   /// Creates a new YAML formatter with the given options.

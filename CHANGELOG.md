@@ -1,3 +1,16 @@
+## 1.0.1
+
+### Fixed
+
+- Normalize extra whitespace in list items (`*   Item` → `- Item`)
+- Normalize extra whitespace in headings (`#    Title` → `# Title`)
+- Normalize extra whitespace in blockquotes (`>    Text` → `> Text`)
+
+### Changed
+
+- Improved integration tests for messy input handling
+- Updated example to demonstrate whitespace normalization
+
 ## 1.0.0
 
 Initial release of Dapper - A simple Markdown and YAML formatter for Dart.

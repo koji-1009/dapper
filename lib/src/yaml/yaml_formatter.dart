@@ -43,9 +43,10 @@ class YamlFormatter {
     }
 
     try {
-      final doc = loadYaml(yaml);
-      final printer = _YamlPrinter(options);
-      return printer.print(doc);
+      // Use loadYamlNode to access source spans for comment preservation
+      final node = loadYamlNode(yaml);
+      final printer = _YamlPrinter(options, yaml);
+      return printer.print(node);
     } catch (e) {
       // If parsing fails, return original content
       return yaml;
@@ -61,147 +62,308 @@ String formatYaml(String yaml, {FormatOptions? options}) {
 
 class _YamlPrinter {
   final FormatOptions options;
+  final String source;
   final StringBuffer _buffer = StringBuffer();
   int _indentLevel = 0;
+  int _lastOffset = 0;
 
-  _YamlPrinter(this.options);
+  _YamlPrinter(this.options, this.source);
 
-  String print(dynamic value) {
+  String print(YamlNode node) {
     _buffer.clear();
-    _printValue(value, inline: false);
+    _lastOffset = 0;
+
+    // Handle leading comments (before the first node)
+    if (node.span.start.offset > 0) {
+      _printGap(0, node.span.start.offset, trimLeadingNewlines: true);
+    }
+
+    _lastOffset = node.span.start.offset;
+    _printNode(node, inline: false);
+
+    // Handle trailing comments (after the last node)
+    if (_lastOffset < source.length) {
+      _printGap(_lastOffset, source.length);
+    }
+
     return _ensureTrailingNewline(_buffer.toString());
   }
 
-  void _printValue(dynamic value, {required bool inline}) {
-    if (value == null) {
-      _write('null');
-    } else if (value is YamlMap || value is Map) {
-      _printMap(value as Map, inline: inline);
-    } else if (value is YamlList || value is List) {
-      _printList(value as List);
-    } else if (value is String) {
-      _printString(value);
-    } else if (value is bool) {
-      _write(value ? 'true' : 'false');
-    } else {
-      _write(value.toString());
+  void _printGap(
+    int start,
+    int end, {
+    int? indentLevel,
+    bool trimLeadingNewlines = false,
+  }) {
+    if (start >= end) return;
+    final gap = source.substring(start, end);
+
+    // Extract comments from the gap
+    final lines = gap.split('\n');
+
+    var trimming = trimLeadingNewlines;
+
+    for (var i = 0; i < lines.length; i++) {
+      var line = lines[i];
+
+      if (trimming) {
+        if (line.trim().isEmpty) continue;
+        trimming = false;
+      }
+
+      // Check for comments
+      final commentIndex = line.indexOf('#');
+      if (commentIndex != -1) {
+        final comment = line.substring(commentIndex);
+
+        // Inline comment logic:
+        // Inherits indentation from the gap's position context?
+        // Actually, inline comments appear on the same line as previous content.
+        // If i==0 (and not skipped by trimming), it follows the previous content.
+        // But we are iterating split lines.
+        // If the first line of split result is not empty, it means there was no newline at start.
+
+        if (i == 0 && start > 0 && !gap.startsWith('\n')) {
+          _write(' $comment');
+        } else {
+          // Smart Indentation:
+          // If the comment originally had less indentation than the current context,
+          // respect the user's intention (e.g. section comments, trailing comments belonging to parent).
+          // Otherwise, enforce the current context's indentation.
+
+          // Calculate original indentation from the line string
+          // line is something like "  # comment"
+          final originalIndentStr = line.substring(0, commentIndex);
+          final originalIndentWidth = originalIndentStr.length;
+
+          final targetLevel = indentLevel ?? _indentLevel;
+          final targetIndentWidth = targetLevel * options.tabWidth;
+
+          // Use the smaller of the two, but ensure it's a multiple of tabWidth if possible?
+          // Or just use exact space count if it's smaller?
+          // Let's stick to strict levels for consistency.
+
+          int effectiveLevel = targetLevel;
+          if (originalIndentWidth < targetIndentWidth) {
+            // Round down to nearest level
+            effectiveLevel = (originalIndentWidth / options.tabWidth).round();
+          }
+
+          _buffer.write(' ' * (effectiveLevel * options.tabWidth));
+          _write(comment);
+        }
+      }
+
+      // Output newline if this is not the last segment
+      if (i < lines.length - 1) {
+        // Limit consecutive newlines to 2 (one blank line)
+        if (!_buffer.toString().endsWith('\n\n')) {
+          _newLine();
+        }
+      }
     }
   }
 
-  void _printMap(Map<dynamic, dynamic> map, {required bool inline}) {
-    // Note: map.isEmpty check is handled by caller (_printValue)
+  void _printNode(YamlNode node, {required bool inline}) {
+    if (node is YamlMap) {
+      _printMap(node, inline: inline);
+    } else if (node is YamlList) {
+      _printList(node);
+    } else {
+      _printScalar(node);
+    }
+  }
 
-    final entries = map.entries.toList();
+  void _printMap(YamlMap map, {required bool inline}) {
+    // Note: map.isEmpty check is handled by caller logic flow usually, but good to check
+    if (map.isEmpty) {
+      _write('{}');
+      _lastOffset = map.span.end.offset;
+      return;
+    }
 
-    for (var i = 0; i < entries.length; i++) {
-      final entry = entries[i];
-      final key = entry.key.toString();
-      final value = entry.value;
+    final keys = map.nodes.keys.toList();
+    // Sort keys by offset to process in order (preserving original order)
+    keys.sort((a, b) {
+      final nodeA = a as YamlNode;
+      final nodeB = b as YamlNode;
+      return nodeA.span.start.offset.compareTo(nodeB.span.start.offset);
+    });
+
+    for (var i = 0; i < keys.length; i++) {
+      final keyNode = keys[i] as YamlNode;
+      final valueNode =
+          map.nodes[keyNode]!; // YamlMap.nodes values are YamlNode
+
+      // Gap before key (comments, etc.)
+      _printGap(_lastOffset, keyNode.span.start.offset);
+
+      // If gap put us on a new line, we need indent.
+      // But _printGap handles writing.
+      // We need to ensure we are on a fresh line if not inline?
+      // Actually _printGap logic needs to be smarter about indents.
+
+      // Simplified approach: _printGap outputs comments.
+      // We then decide if we need a newline/indent for the key.
 
       if (i > 0 || !inline) {
-        _writeIndent();
+        if (!inline && _buffer.isEmpty) {
+          // Don't add newline at the very beginning of the file/buffer
+        } else if (!_buffer.toString().endsWith('\n')) {
+          _newLine();
+        }
+        if (!inline && _buffer.isNotEmpty) {
+          _writeIndent();
+        } else if (inline) {
+          _writeIndent();
+        }
+      } else if (inline && i == 0) {
+        // Key follows something on same line (e.g. "- key:")
+        if (_buffer.toString().endsWith('\n')) {
+          _writeIndent();
+        }
       }
 
-      _write('$key:');
+      final keyText = keyNode.toString(); // or keyNode.value.toString()
+      _write('$keyText:');
 
-      if (value == null) {
-        _writeLine(' null');
-      } else if (_isScalar(value)) {
-        _write(' ');
-        _printValue(value, inline: true);
-        _newLine();
-      } else if (value is Map && value.isEmpty) {
-        _writeLine(' {}');
-      } else if (value is List && value.isEmpty) {
-        _writeLine(' []');
+      _lastOffset = keyNode.span.end.offset;
+
+      // Gap between key and value (inline comments?)
+      // If value is simple, comments stay on same level.
+      // If value is complex (block), comments usually belong to the child block?
+      // Or they are just comments on the key.
+      // But visually, if they are on the next line, they should be indented if the value is indented.
+      final gapIndent = _isScalar(valueNode) ? null : _indentLevel + 1;
+      _printGap(
+        _lastOffset,
+        valueNode.span.start.offset,
+        indentLevel: gapIndent,
+      );
+      _lastOffset = valueNode.span.start.offset;
+
+      // Ensure we don't print "null" for implicit null values
+      if (valueNode.span.length == 0 && valueNode.value == null) {
+        // Implicit null, do nothing
+        _lastOffset = valueNode.span.end.offset;
+      } else if (_isScalar(valueNode) ||
+          (valueNode is YamlMap && valueNode.isEmpty) ||
+          (valueNode is YamlList && valueNode.isEmpty)) {
+        if (!_buffer.toString().endsWith(' ') &&
+            !_buffer.toString().endsWith('\n')) {
+          _write(' ');
+        }
+        _printNode(valueNode, inline: true);
+        _lastOffset = valueNode.span.end.offset;
       } else {
-        _newLine();
+        if (!_buffer.toString().endsWith('\n')) {
+          _newLine();
+        }
         _indentLevel++;
-        _printValue(value, inline: false);
+        _printNode(valueNode, inline: false);
         _indentLevel--;
+        // Map/List printing updates _lastOffset internally (including trailing gaps).
+        // Do not overwrite _lastOffset here.
       }
+    }
+
+    // Process trailing comments/content belonging to this map but after the last value
+    if (_lastOffset < map.span.end.offset) {
+      _printGap(_lastOffset, map.span.end.offset, indentLevel: _indentLevel);
+      _lastOffset = map.span.end.offset;
     }
   }
 
-  void _printList(List<dynamic> list) {
-    // Note: list.isEmpty check is handled by caller (_printValue)
+  void _printList(YamlList list) {
+    if (list.isEmpty) {
+      _write('[]');
+      _lastOffset = list.span.end.offset;
+      return;
+    }
 
-    for (final item in list) {
+    for (final node in list.nodes) {
+      // Gap before item
+      _printGap(_lastOffset, node.span.start.offset);
+
+      if (!_buffer.toString().endsWith('\n')) {
+        _newLine();
+      }
+
       _writeIndent();
       _write('- ');
 
-      if (_isScalar(item)) {
-        _printValue(item, inline: true);
-        _newLine();
-      } else if (item is Map) {
-        if (item.isEmpty) {
+      _lastOffset = node.span.start.offset;
+
+      if (_isScalar(node)) {
+        _printNode(node, inline: true);
+        _lastOffset = node.span.end.offset;
+      } else if (node is YamlMap) {
+        // Special handling for map inside list
+        if (node.isEmpty) {
           _writeLine('{}');
+          _lastOffset = node.span.end.offset;
         } else {
-          // For maps in lists, print first key on same line
-          final entries = item.entries.toList();
-          final firstEntry = entries.first;
-          _write('${firstEntry.key}:');
+          // We need to print the first entry on the same line
+          // But _printMap logic handles "inline".
+          // However, _printMap expects to handle keys.
 
-          if (_isScalar(firstEntry.value)) {
-            _write(' ');
-            _printValue(firstEntry.value, inline: true);
-            _newLine();
-          } else {
-            _newLine();
-            _indentLevel++;
-            _printValue(firstEntry.value, inline: false);
-            _indentLevel--;
-          }
-
-          // Print remaining entries with proper indentation
-          if (entries.length > 1) {
-            _indentLevel++;
-            for (var i = 1; i < entries.length; i++) {
-              final entry = entries[i];
-              _writeIndent();
-              _write('${entry.key}:');
-
-              if (_isScalar(entry.value)) {
-                _write(' ');
-                _printValue(entry.value, inline: true);
-                _newLine();
-              } else {
-                _newLine();
-                _indentLevel++;
-                _printValue(entry.value, inline: false);
-                _indentLevel--;
-              }
-            }
-            _indentLevel--;
-          }
+          // Delegate to _printMap with inline=true for the first key
+          // INDENTATION FIX: Increment indent level so subsequent keys align with the first key content
+          _indentLevel++;
+          _printMap(node, inline: true);
+          _indentLevel--;
+          // _printMap updates _lastOffset
         }
-      } else if (item is List) {
-        if (item.isEmpty) {
+      } else if (node is YamlList) {
+        if (node.isEmpty) {
           _writeLine('[]');
+          _lastOffset = node.span.end.offset;
         } else {
           _newLine();
           _indentLevel++;
-          _printValue(item, inline: false);
+          _printNode(node, inline: false);
           _indentLevel--;
+          // inner list updates _lastOffset
         }
       }
     }
+
+    // Process trailing comments belonging to this list
+    if (_lastOffset < list.span.end.offset) {
+      _printGap(_lastOffset, list.span.end.offset, indentLevel: _indentLevel);
+      _lastOffset = list.span.end.offset;
+    }
   }
 
-  void _printString(String value) {
-    // Check if string needs quoting
-    if (_needsQuoting(value)) {
-      // Use double quotes and escape special characters
-      final escaped = value
-          .replaceAll(r'\', r'\\')
-          .replaceAll('"', r'\"')
-          .replaceAll('\n', r'\n')
-          .replaceAll('\r', r'\r')
-          .replaceAll('\t', r'\t');
-      _write('"$escaped"');
-    } else {
-      _write(value);
+  void _printScalar(YamlNode node) {
+    final scalar = node as YamlScalar;
+    // Determine quoting...
+    final value = scalar.value;
+
+    // Only quote strings. Primitives (null, bool, num) should differ to their string representation
+    if (value is! String) {
+      _write(value == null ? 'null' : value.toString());
+      return;
     }
+
+    String text;
+    if (scalar.style == ScalarStyle.SINGLE_QUOTED) {
+      text = "'${value.toString()}'"; // Simple reconstruction
+    } else if (scalar.style == ScalarStyle.DOUBLE_QUOTED) {
+      text = '"${value.toString()}"';
+    } else {
+      text = value.toString();
+      if (_needsQuoting(text)) {
+        text = '"${text.replaceAll('"', r'\"')}"';
+      }
+    }
+    _write(text);
+  }
+
+  // ... helpers like _write, _writeLine, _isScalar, _needsQuoting ...
+
+  bool _isScalar(YamlNode node) {
+    return node is YamlScalar;
   }
 
   bool _needsQuoting(String value) {
@@ -248,10 +410,6 @@ class _YamlPrinter {
     if (value.isEmpty) return false;
     final numPattern = RegExp(r'^[+-]?(\d+\.?\d*|\.\d+)([eE][+-]?\d+)?$');
     return numPattern.hasMatch(value);
-  }
-
-  bool _isScalar(dynamic value) {
-    return value == null || value is String || value is num || value is bool;
   }
 
   void _write(String text) {

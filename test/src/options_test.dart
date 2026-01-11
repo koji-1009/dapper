@@ -94,6 +94,12 @@ void main() {
         expect(a, isNot(equals(b)));
       });
 
+      test('different ulStyle are not equal', () {
+        const a = FormatOptions(ulStyle: UnorderedListStyle.dash);
+        const b = FormatOptions(ulStyle: UnorderedListStyle.asterisk);
+        expect(a, isNot(equals(b)));
+      });
+
       test('identical returns true for same instance', () {
         const options = FormatOptions();
         expect(options, equals(options));

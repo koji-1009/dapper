@@ -66,5 +66,38 @@ Term
       final formatter = MarkdownFormatter();
       expect(formatter.format(input), expected);
     });
+
+    test('formats a messy document correctly', () {
+      const input = '''
+#    Heading with spaces
+
+*   Misaligned list item
+  * Nested item
+*    Emphasis: *bold*
+
+| Column 1 | Column 2 |
+| --- | :---: |
+| Value 1 |   Value 2 |
+
+>    Blockquote with spaces
+''';
+
+      const expected = '''
+# Heading with spaces
+
+- Misaligned list item
+- Nested item
+- Emphasis: _bold_
+
+| Column 1 | Column 2 |
+| -------- |:--------:|
+| Value 1  | Value 2  |
+
+> Blockquote with spaces
+''';
+
+      final formatter = MarkdownFormatter();
+      expect(formatter.format(input), expected);
+    });
   });
 }

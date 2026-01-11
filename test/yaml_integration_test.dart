@@ -127,5 +127,39 @@ jobs:
 ''';
       expect(formatYaml(input), expected);
     });
+
+    test('formats a messy YAML correctly', () {
+      const input = '''
+name:   my_package
+version:    1.0.0
+
+
+dependencies:
+    # A dependency with a comment
+    flutter:
+      sdk: flutter
+    dapper:   ^1.0.0  
+
+
+dev_dependencies:
+  lints: '>=2.0.0 <3.0.0'
+''';
+
+      const expected = '''
+name: my_package
+version: 1.0.0
+
+dependencies:
+  # A dependency with a comment
+  flutter:
+    sdk: flutter
+  dapper: ^1.0.0
+
+dev_dependencies:
+  lints: '>=2.0.0 <3.0.0'
+''';
+
+      expect(formatYaml(input), expected);
+    });
   });
 }

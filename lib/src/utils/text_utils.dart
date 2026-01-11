@@ -60,8 +60,7 @@ String ensureTrailingNewline(String text) {
 
 /// Counts the display width of a string.
 ///
-/// For now, this just returns the length. In the future, it could
-/// account for wide characters (CJK, emoji, etc.).
+/// Returns the character count (string length).
 int displayWidth(String text) {
   return text.length;
 }

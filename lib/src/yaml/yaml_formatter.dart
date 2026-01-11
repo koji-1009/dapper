@@ -235,7 +235,6 @@ class _YamlPrinter {
       // If value is complex (block), comments usually belong to the child block?
       // Or they are just comments on the key.
       // But visually, if they are on the next line, they should be indented if the value is indented.
-      // Gap between key and value (inline comments?)
       final isScalarOrEmpty =
           _isScalar(valueNode) ||
           (valueNode is YamlMap && valueNode.isEmpty) ||

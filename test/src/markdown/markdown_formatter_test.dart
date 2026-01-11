@@ -175,6 +175,17 @@ Term 2
         expect(result, contains('- item 1'));
         expect(result, contains('- item 2'));
       });
+
+      test('normalizes spaces in list items', () {
+        final input = '''
+*   Item 1
+*    Item 2
+''';
+        final result = formatter.format(input);
+        expect(result, contains('- Item 1'));
+        expect(result, contains('- Item 2'));
+        expect(result, isNot(contains('-   Item 1')));
+      });
     });
 
     group('Table formatting', () {

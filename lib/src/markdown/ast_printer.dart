@@ -229,7 +229,7 @@ class MarkdownPrinter {
           _writeLine(lines[i]);
         }
       } else {
-        _writeLine(content);
+        _writeLine(content.trim());
       }
       return;
     }

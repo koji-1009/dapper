@@ -1,5 +1,6 @@
 import 'package:dapper/dapper.dart';
 import 'package:test/test.dart';
+import 'package:yaml/yaml.dart';
 
 void main() {
   group('YamlFormatter', () {
@@ -100,10 +101,9 @@ ratio: 1.5''';
       expect(result, contains('hello world'));
     });
 
-    test('returns original on parse error', () {
+    test('throws format exception on parse error', () {
       final input = 'invalid: yaml: syntax';
-      final result = formatter.format(input);
-      expect(result, input);
+      expect(() => formatter.format(input), throwsA(isA<YamlException>()));
     });
 
     // Additional tests for 100% coverage
@@ -402,6 +402,20 @@ key:
 ''';
       expect(formatYaml(input), expected);
     });
+    test('removes blank lines between parent key and first child', () {
+      const input = '''
+jobs:
+
+  test:
+    runs-on: ubuntu-slim
+''';
+      const expected = '''
+jobs:
+  test:
+    runs-on: ubuntu-slim
+''';
+      expect(formatYaml(input), expected);
+    });
   });
 
   group('formatYaml convenience function', () {
@@ -418,11 +432,10 @@ key:
       expect(result, contains('name: test'));
     });
 
-    test('handles unknown tags in list', () {
+    test('throws on unknown tags by default', () {
       final formatter = YamlFormatter();
       final input = '- !!custom value';
-      final result = formatter.format(input);
-      expect(result, contains('value'));
+      expect(() => formatter.format(input), throwsA(isA<YamlException>()));
     });
   });
 }

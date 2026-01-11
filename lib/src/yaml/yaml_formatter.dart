@@ -1,6 +1,5 @@
 /// YAML formatter.
 ///
-/// Formats YAML documents with consistent indentation and style.
 library;
 
 import 'package:yaml/yaml.dart';
@@ -42,15 +41,10 @@ class YamlFormatter {
       return '';
     }
 
-    try {
-      // Use loadYamlNode to access source spans for comment preservation
-      final node = loadYamlNode(yaml);
-      final printer = _YamlPrinter(options, yaml);
-      return printer.print(node);
-    } catch (e) {
-      // If parsing fails, return original content
-      return yaml;
-    }
+    // Use loadYamlNode to access source spans for comment preservation
+    final node = loadYamlNode(yaml);
+    final printer = _YamlPrinter(options, yaml);
+    return printer.print(node);
   }
 }
 
@@ -94,6 +88,7 @@ class _YamlPrinter {
     int end, {
     int? indentLevel,
     bool trimLeadingNewlines = false,
+    int maxBlankLines = 1,
   }) {
     if (start >= end) return;
     final gap = source.substring(start, end);
@@ -116,32 +111,14 @@ class _YamlPrinter {
       if (commentIndex != -1) {
         final comment = line.substring(commentIndex);
 
-        // Inline comment logic:
-        // Inherits indentation from the gap's position context?
-        // Actually, inline comments appear on the same line as previous content.
-        // If i==0 (and not skipped by trimming), it follows the previous content.
-        // But we are iterating split lines.
-        // If the first line of split result is not empty, it means there was no newline at start.
-
         if (i == 0 && start > 0 && !gap.startsWith('\n')) {
           _write(' $comment');
         } else {
-          // Smart Indentation:
-          // If the comment originally had less indentation than the current context,
-          // respect the user's intention (e.g. section comments, trailing comments belonging to parent).
-          // Otherwise, enforce the current context's indentation.
-
-          // Calculate original indentation from the line string
-          // line is something like "  # comment"
           final originalIndentStr = line.substring(0, commentIndex);
           final originalIndentWidth = originalIndentStr.length;
 
           final targetLevel = indentLevel ?? _indentLevel;
           final targetIndentWidth = targetLevel * options.tabWidth;
-
-          // Use the smaller of the two, but ensure it's a multiple of tabWidth if possible?
-          // Or just use exact space count if it's smaller?
-          // Let's stick to strict levels for consistency.
 
           int effectiveLevel = targetLevel;
           if (originalIndentWidth < targetIndentWidth) {
@@ -156,12 +133,29 @@ class _YamlPrinter {
 
       // Output newline if this is not the last segment
       if (i < lines.length - 1) {
-        // Limit consecutive newlines to 2 (one blank line)
-        if (!_buffer.toString().endsWith('\n\n')) {
+        // Limit consecutive newlines based on maxBlankLines
+        // maxBlankLines = 1 means we allow 1 blank line (which is 2 consecutive newlines)
+        // \n\n ends with \n\n.
+        final limit = maxBlankLines + 1;
+        final currentNewlines = _countTrailingNewlines(_buffer.toString());
+
+        if (currentNewlines < limit) {
           _newLine();
         }
       }
     }
+  }
+
+  int _countTrailingNewlines(String s) {
+    int count = 0;
+    for (int i = s.length - 1; i >= 0; i--) {
+      if (s[i] == '\n') {
+        count++;
+      } else {
+        break;
+      }
+    }
+    return count;
   }
 
   void _printNode(YamlNode node, {required bool inline}) {
@@ -182,21 +176,28 @@ class _YamlPrinter {
       return;
     }
 
-    final keys = map.nodes.keys.toList();
-    // Sort keys by offset to process in order (preserving original order)
-    keys.sort((a, b) {
-      final nodeA = a as YamlNode;
-      final nodeB = b as YamlNode;
-      return nodeA.span.start.offset.compareTo(nodeB.span.start.offset);
-    });
+    // Keys are sorted by their appearance in the source to preserve order
+    final sortedKeys = map.nodes.keys.toList()
+      ..sort(
+        (a, b) => map.nodes[a]!.span.start.offset.compareTo(
+          map.nodes[b]!.span.start.offset,
+        ),
+      );
 
-    for (var i = 0; i < keys.length; i++) {
-      final keyNode = keys[i] as YamlNode;
-      final valueNode =
-          map.nodes[keyNode]!; // YamlMap.nodes values are YamlNode
+    for (var i = 0; i < sortedKeys.length; i++) {
+      final key = sortedKeys[i];
+      final keyNode = map.nodes.keys.firstWhere(
+        (k) => k == key,
+      ); // Get the key node to access span
+      final valueNode = map.nodes[key]!;
 
-      // Gap before key (comments, etc.)
-      _printGap(_lastOffset, keyNode.span.start.offset);
+      // Gap before key
+      // TRIM FIX: Trim leading newlines for the first key to enforce tight padding after parent
+      _printGap(
+        _lastOffset,
+        (keyNode as YamlNode).span.start.offset,
+        trimLeadingNewlines: i == 0,
+      );
 
       // If gap put us on a new line, we need indent.
       // But _printGap handles writing.
@@ -234,11 +235,23 @@ class _YamlPrinter {
       // If value is complex (block), comments usually belong to the child block?
       // Or they are just comments on the key.
       // But visually, if they are on the next line, they should be indented if the value is indented.
-      final gapIndent = _isScalar(valueNode) ? null : _indentLevel + 1;
+      // Gap between key and value (inline comments?)
+      final isScalarOrEmpty =
+          _isScalar(valueNode) ||
+          (valueNode is YamlMap && valueNode.isEmpty) ||
+          (valueNode is YamlList && valueNode.isEmpty);
+
+      final gapIndent = isScalarOrEmpty ? null : _indentLevel + 1;
+
+      // Rule: Reduce blank lines to 0 between a structured key and its first child
+      // if it's a block value.
+      final maxBlankLines = isScalarOrEmpty ? 1 : 0;
+
       _printGap(
         _lastOffset,
         valueNode.span.start.offset,
         indentLevel: gapIndent,
+        maxBlankLines: maxBlankLines,
       );
       _lastOffset = valueNode.span.start.offset;
 
@@ -246,9 +259,7 @@ class _YamlPrinter {
       if (valueNode.span.length == 0 && valueNode.value == null) {
         // Implicit null, do nothing
         _lastOffset = valueNode.span.end.offset;
-      } else if (_isScalar(valueNode) ||
-          (valueNode is YamlMap && valueNode.isEmpty) ||
-          (valueNode is YamlList && valueNode.isEmpty)) {
+      } else if (isScalarOrEmpty) {
         if (!_buffer.toString().endsWith(' ') &&
             !_buffer.toString().endsWith('\n')) {
           _write(' ');
@@ -281,9 +292,16 @@ class _YamlPrinter {
       return;
     }
 
+    var isFirst = true;
     for (final node in list.nodes) {
       // Gap before item
-      _printGap(_lastOffset, node.span.start.offset);
+      // TRIM FIX: Trim leading newlines for first item
+      _printGap(
+        _lastOffset,
+        node.span.start.offset,
+        trimLeadingNewlines: isFirst,
+      );
+      isFirst = false;
 
       if (!_buffer.toString().endsWith('\n')) {
         _newLine();

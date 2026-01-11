@@ -1,0 +1,14 @@
+# dapper.yaml example configuration
+# Place this file in your project root to configure dapper
+
+# Maximum line width for wrapping (Markdown only)
+print_width: 80
+
+# Number of spaces per indentation level
+tab_width: 2
+
+# How to wrap prose: always, never, preserve
+prose_wrap: preserve
+
+# Unordered list bullet style: dash (-), asterisk (*), plus (+)
+ul_style: dash

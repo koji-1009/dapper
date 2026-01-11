@@ -7,263 +7,452 @@ import 'dart:io';
 
 import 'package:args/args.dart';
 import 'package:dapper/dapper.dart';
+import 'package:yaml/yaml.dart';
 
-/// Exit codes
-const _exitSuccess = 0;
-const _exitError = 1;
-const _exitChanged = 1;
+/// CLI exit codes.
+enum ExitCode {
+  success(0),
+  error(1),
+  changed(1);
+
+  const ExitCode(this.code);
+  final int code;
+}
+
+/// Output modes for formatted content.
+enum OutputMode {
+  write,
+  show,
+  json,
+  none;
+
+  static OutputMode fromString(String value) => switch (value) {
+    'write' => OutputMode.write,
+    'show' => OutputMode.show,
+    'json' => OutputMode.json,
+    'none' => OutputMode.none,
+    _ => OutputMode.write,
+  };
+}
+
+/// Processing result for files and directories.
+enum ProcessResult { unchanged, changed, error }
 
 void main(List<String> arguments) {
-  final parser = ArgParser()
-    ..addFlag(
-      'help',
-      abbr: 'h',
-      negatable: false,
-      help: 'Print this usage information.',
-    )
-    ..addFlag(
-      'verbose',
-      abbr: 'v',
-      negatable: false,
-      help: 'Show all options and flags with --help.',
-    )
-    ..addOption(
-      'output',
-      abbr: 'o',
-      defaultsTo: 'write',
-      allowed: ['write', 'show', 'json', 'none'],
-      help: 'Set where to write formatted output.',
-      valueHelp: 'mode',
-      allowedHelp: {
-        'write': 'Overwrite formatted files on disk.',
-        'show': 'Print code to terminal.',
-        'json': 'Print code as JSON.',
-        'none': 'Discard output.',
-      },
-    )
-    ..addFlag(
-      'set-exit-if-changed',
-      negatable: false,
-      help: 'Return exit code 1 if there are any formatting changes.',
-    )
-    ..addOption(
-      'print-width',
-      defaultsTo: '80',
-      help: 'Maximum line width.',
-      valueHelp: 'int',
-    )
-    ..addOption(
-      'prose-wrap',
-      defaultsTo: 'preserve',
-      allowed: ['always', 'never', 'preserve'],
-      help: 'How to wrap prose.',
-      valueHelp: 'mode',
+  const cli = DapperCli();
+  exit(cli.run(arguments).code);
+}
+
+/// Command-line interface for the Dapper formatter.
+class DapperCli {
+  const DapperCli();
+
+  static const _noFilesError = 'Error: No files or directories specified.';
+
+  /// Directories to ignore during recursive scanning.
+  static const _ignoredDirectories = {
+    '.git',
+    '.dart_tool',
+    '.idea',
+    '.vscode',
+    '.fvm',
+    'build',
+  };
+
+  /// Runs the CLI with the given arguments.
+  ///
+  /// Returns the exit code.
+  ExitCode run(List<String> arguments) {
+    // Fast path: no arguments means no files specified
+    if (arguments.isEmpty) {
+      stderr.writeln(_noFilesError);
+      _printUsage('');
+      return ExitCode.error;
+    }
+
+    final parser = ArgParser()
+      ..addFlag(
+        'help',
+        abbr: 'h',
+        negatable: false,
+        help: 'Print this usage information.',
+      )
+      ..addOption(
+        'output',
+        abbr: 'o',
+        defaultsTo: 'write',
+        allowed: ['write', 'show', 'json', 'none'],
+        help: 'Set where to write formatted output.',
+        valueHelp: 'mode',
+        allowedHelp: {
+          'write': 'Overwrite formatted files on disk.',
+          'show': 'Print code to terminal.',
+          'json': 'Print code as JSON.',
+          'none': 'Discard output.',
+        },
+      )
+      ..addFlag(
+        'set-exit-if-changed',
+        negatable: false,
+        help: 'Return exit code 1 if there are any formatting changes.',
+      )
+      ..addOption(
+        'print-width',
+        defaultsTo: '80',
+        help: 'Maximum line width.',
+        valueHelp: 'int',
+      )
+      ..addOption(
+        'prose-wrap',
+        defaultsTo: 'preserve',
+        allowed: ['always', 'never', 'preserve'],
+        help: 'How to wrap prose.',
+        valueHelp: 'mode',
+      );
+
+    try {
+      final results = parser.parse(arguments);
+
+      if (results['help'] as bool) {
+        _printUsage(parser.usage);
+        return ExitCode.success;
+      }
+
+      final paths = results.rest;
+      if (paths.isEmpty) {
+        stderr.writeln(_noFilesError);
+        _printUsage(parser.usage);
+        return ExitCode.error;
+      }
+
+      final outputMode = OutputMode.fromString(results['output'] as String);
+      final setExitIfChanged = results['set-exit-if-changed'] as bool;
+      final options = _resolveOptions(results);
+
+      final (hasChanges, hasErrors) = _processPaths(paths, outputMode, options);
+
+      if (hasErrors) {
+        return ExitCode.error;
+      }
+      if (setExitIfChanged && hasChanges) {
+        return ExitCode.changed;
+      }
+      return ExitCode.success;
+    } on FormatException catch (e) {
+      stderr.writeln('Error: ${e.message}');
+      _printUsage(parser.usage);
+      return ExitCode.error;
+    }
+  }
+
+  void _printUsage(String usage) {
+    stdout.writeln('Idiomatically format Markdown and YAML files.');
+    stdout.writeln();
+    stdout.writeln('Usage: dapper [options] <files or directories...>');
+    if (usage.isNotEmpty) {
+      stdout.writeln();
+      stdout.writeln(usage);
+    }
+  }
+
+  FormatOptions _resolveOptions(ArgResults results) {
+    final configOptions = _loadConfigFromDirectory(Directory.current.path);
+
+    final cliPrintWidth = results.wasParsed('print-width')
+        ? int.tryParse(results['print-width'] as String)
+        : null;
+    final cliProseWrap = results.wasParsed('prose-wrap')
+        ? _parseProseWrap(results['prose-wrap'] as String)
+        : null;
+
+    return FormatOptions(
+      printWidth: cliPrintWidth ?? configOptions?.printWidth ?? 80,
+      tabWidth: configOptions?.tabWidth ?? 2,
+      proseWrap: cliProseWrap ?? configOptions?.proseWrap ?? ProseWrap.preserve,
+      ulStyle: configOptions?.ulStyle ?? UnorderedListStyle.dash,
     );
+  }
 
-  try {
-    final results = parser.parse(arguments);
-
-    if (results['help'] as bool) {
-      _printUsage(parser, verbose: results['verbose'] as bool);
-      exit(_exitSuccess);
-    }
-
-    final paths = results.rest;
-    if (paths.isEmpty) {
-      stderr.writeln('Error: No files or directories specified.');
-      stderr.writeln();
-      _printUsage(parser);
-      exit(_exitError);
-    }
-
-    final outputMode = results['output'] as String;
-    final setExitIfChanged = results['set-exit-if-changed'] as bool;
-    final printWidth = int.tryParse(results['print-width'] as String) ?? 80;
-    final proseWrapStr = results['prose-wrap'] as String;
-    final proseWrap = switch (proseWrapStr) {
+  ProseWrap _parseProseWrap(String value) {
+    return switch (value) {
       'always' => ProseWrap.always,
       'never' => ProseWrap.never,
       _ => ProseWrap.preserve,
     };
+  }
 
-    final options = FormatOptions(printWidth: printWidth, proseWrap: proseWrap);
-
+  (bool, bool) _processPaths(
+    List<String> paths,
+    OutputMode outputMode,
+    FormatOptions options,
+  ) {
     var hasChanges = false;
     var hasErrors = false;
 
     for (final path in paths) {
       final result = _processPath(path, outputMode, options);
-      if (result == _ProcessResult.changed) {
+      if (result == ProcessResult.changed) {
         hasChanges = true;
-      } else if (result == _ProcessResult.error) {
+      } else if (result == ProcessResult.error) {
         hasErrors = true;
       }
     }
 
-    if (hasErrors) {
-      exit(_exitError);
-    }
-
-    if (setExitIfChanged && hasChanges) {
-      exit(_exitChanged);
-    }
-
-    exit(_exitSuccess);
-  } on FormatException catch (e) {
-    stderr.writeln('Error: ${e.message}');
-    stderr.writeln();
-    _printUsage(parser);
-    exit(_exitError);
+    return (hasChanges, hasErrors);
   }
-}
 
-void _printUsage(ArgParser parser, {bool verbose = false}) {
-  stdout.writeln('Idiomatically format Markdown and YAML files.');
-  stdout.writeln();
-  stdout.writeln('Usage: dapper [options] <files or directories...>');
-  stdout.writeln();
-  stdout.writeln(parser.usage);
-}
+  ProcessResult _processPath(
+    String path,
+    OutputMode outputMode,
+    FormatOptions options,
+  ) {
+    final entity = FileSystemEntity.typeSync(path);
 
-enum _ProcessResult { unchanged, changed, error }
+    return switch (entity) {
+      FileSystemEntityType.notFound => _handleNotFound(path),
+      FileSystemEntityType.directory => _processDirectory(
+        path,
+        outputMode,
+        options,
+      ),
+      FileSystemEntityType.file => _processFile(path, outputMode, options),
+      _ => ProcessResult.unchanged,
+    };
+  }
 
-_ProcessResult _processPath(
-  String path,
-  String outputMode,
-  FormatOptions options,
-) {
-  final entity = FileSystemEntity.typeSync(path);
-
-  if (entity == FileSystemEntityType.notFound) {
+  ProcessResult _handleNotFound(String path) {
     stderr.writeln('Error: "$path" not found.');
-    return _ProcessResult.error;
+    return ProcessResult.error;
   }
 
-  if (entity == FileSystemEntityType.directory) {
-    return _processDirectory(path, outputMode, options);
-  }
+  ProcessResult _processDirectory(
+    String dirPath,
+    OutputMode outputMode,
+    FormatOptions options,
+  ) {
+    final dir = Directory(dirPath);
+    var result = ProcessResult.unchanged;
 
-  if (entity == FileSystemEntityType.file) {
-    return _processFile(path, outputMode, options);
-  }
+    try {
+      for (final entity in dir.listSync(recursive: false)) {
+        final name = _basename(entity.path);
 
-  return _ProcessResult.unchanged;
-}
-
-// Directories to ignore during recursive scanning.
-// These typically contain generated files, build artifacts, or IDE settings
-// that should not be formatted.
-// Note: .github is NOT included here because we want to format workflow files.
-const _ignoredDirectories = {
-  '.git',
-  '.dart_tool',
-  '.idea',
-  '.vscode',
-  '.fvm',
-  'build',
-};
-
-_ProcessResult _processDirectory(
-  String dirPath,
-  String outputMode,
-  FormatOptions options,
-) {
-  final dir = Directory(dirPath);
-  var result = _ProcessResult.unchanged;
-
-  try {
-    for (final entity in dir.listSync(recursive: false)) {
-      final name = Uri.file(
-        entity.path,
-      ).pathSegments.lastWhere((s) => s.isNotEmpty);
-
-      if (_ignoredDirectories.contains(name)) {
-        continue;
-      }
-
-      if (entity is Directory) {
-        final subResult = _processDirectory(entity.path, outputMode, options);
-        if (subResult == _ProcessResult.error) {
-          result = _ProcessResult.error;
-        } else if (subResult == _ProcessResult.changed &&
-            result != _ProcessResult.error) {
-          result = _ProcessResult.changed;
+        if (_ignoredDirectories.contains(name)) {
+          continue;
         }
-      } else if (entity is File && _isFormattableFile(entity.path)) {
-        final fileResult = _processFile(entity.path, outputMode, options);
-        if (fileResult == _ProcessResult.error) {
-          result = _ProcessResult.error;
-        } else if (fileResult == _ProcessResult.changed &&
-            result != _ProcessResult.error) {
-          result = _ProcessResult.changed;
-        }
+
+        final subResult = _processEntity(entity, outputMode, options);
+        result = _mergeResults(result, subResult);
       }
+    } catch (e) {
+      stderr.writeln('Error analyzing directory "$dirPath": $e');
+      return ProcessResult.error;
     }
-  } catch (e) {
-    stderr.writeln('Error analyzing directory "$dirPath": $e');
-    return _ProcessResult.error;
+
+    return result;
   }
 
-  return result;
-}
-
-_ProcessResult _processFile(
-  String filePath,
-  String outputMode,
-  FormatOptions options,
-) {
-  if (!_isFormattableFile(filePath)) {
-    return _ProcessResult.unchanged;
+  ProcessResult _processEntity(
+    FileSystemEntity entity,
+    OutputMode outputMode,
+    FormatOptions options,
+  ) {
+    if (entity is Directory) {
+      return _processDirectory(entity.path, outputMode, options);
+    }
+    if (entity is File && _isFormattableFile(entity.path)) {
+      return _processFile(entity.path, outputMode, options);
+    }
+    return ProcessResult.unchanged;
   }
 
-  try {
-    final file = File(filePath);
-    final content = file.readAsStringSync();
-    final formatted = _formatFile(filePath, content, options);
+  ProcessResult _mergeResults(ProcessResult current, ProcessResult newResult) {
+    if (newResult == ProcessResult.error) {
+      return ProcessResult.error;
+    }
+    if (newResult == ProcessResult.changed && current != ProcessResult.error) {
+      return ProcessResult.changed;
+    }
+    return current;
+  }
 
-    final changed = content != formatted;
+  ProcessResult _processFile(
+    String filePath,
+    OutputMode outputMode,
+    FormatOptions options,
+  ) {
+    if (!_isFormattableFile(filePath)) {
+      return ProcessResult.unchanged;
+    }
 
+    try {
+      final file = File(filePath);
+      final content = file.readAsStringSync();
+      final formatted = _formatContent(filePath, content, options);
+      final changed = content != formatted;
+
+      _outputResult(file, filePath, formatted, changed, outputMode);
+
+      return changed ? ProcessResult.changed : ProcessResult.unchanged;
+    } catch (e) {
+      stderr.writeln('Error formatting "$filePath": $e');
+      return ProcessResult.error;
+    }
+  }
+
+  void _outputResult(
+    File file,
+    String filePath,
+    String formatted,
+    bool changed,
+    OutputMode outputMode,
+  ) {
     switch (outputMode) {
-      case 'write':
+      case OutputMode.write:
         if (changed) {
           file.writeAsStringSync(formatted);
           stdout.writeln('Formatted $filePath');
         }
-      case 'show':
+      case OutputMode.show:
         stdout.write(formatted);
-      case 'json':
-        final json = jsonEncode({'path': filePath, 'source': formatted});
-        stdout.writeln(json);
-      case 'none':
-        // Discard output, just check for changes
+      case OutputMode.json:
+        stdout.writeln(jsonEncode({'path': filePath, 'source': formatted}));
+      case OutputMode.none:
         break;
     }
+  }
 
-    return changed ? _ProcessResult.changed : _ProcessResult.unchanged;
-  } catch (e) {
-    stderr.writeln('Error formatting "$filePath": $e');
-    return _ProcessResult.error;
+  bool _isFormattableFile(String path) {
+    final lowerPath = path.toLowerCase();
+    return lowerPath.endsWith('.md') ||
+        lowerPath.endsWith('.markdown') ||
+        lowerPath.endsWith('.yaml') ||
+        lowerPath.endsWith('.yml');
+  }
+
+  String _formatContent(
+    String filePath,
+    String content,
+    FormatOptions options,
+  ) {
+    final lowerPath = filePath.toLowerCase();
+
+    if (lowerPath.endsWith('.md') || lowerPath.endsWith('.markdown')) {
+      return formatMarkdown(content, options: options);
+    }
+
+    if (lowerPath.endsWith('.yaml') || lowerPath.endsWith('.yml')) {
+      return formatYaml(content, options: options);
+    }
+
+    return content;
+  }
+
+  FormatOptions? _loadConfigFromDirectory(String directoryPath) {
+    final dir = Directory(directoryPath);
+    if (!dir.existsSync()) {
+      return null;
+    }
+
+    // Try dapper.yaml first
+    final dapperConfig = File('${dir.path}/dapper.yaml');
+    if (dapperConfig.existsSync()) {
+      return _parseConfigFile(dapperConfig.readAsStringSync());
+    }
+
+    // Fall back to analysis_options.yaml
+    final analysisOptions = File('${dir.path}/analysis_options.yaml');
+    if (analysisOptions.existsSync()) {
+      return _parseAnalysisOptions(analysisOptions.readAsStringSync());
+    }
+
+    return null;
+  }
+
+  FormatOptions? _parseConfigFile(String content) {
+    try {
+      final yaml = loadYaml(content);
+      if (yaml is! YamlMap) {
+        return null;
+      }
+      return _parseOptionsMap(yaml);
+    } catch (_) {
+      return null;
+    }
+  }
+
+  FormatOptions? _parseAnalysisOptions(String content) {
+    try {
+      final yaml = loadYaml(content);
+      if (yaml is! YamlMap) {
+        return null;
+      }
+      final dapperBlock = yaml['dapper'];
+      if (dapperBlock is! YamlMap) {
+        return null;
+      }
+      return _parseOptionsMap(dapperBlock);
+    } catch (_) {
+      return null;
+    }
+  }
+
+  FormatOptions? _parseOptionsMap(YamlMap map) {
+    final printWidth =
+        _parseConfigInt(map['print_width']) ??
+        _parseConfigInt(map['printWidth']);
+    final tabWidth =
+        _parseConfigInt(map['tab_width']) ?? _parseConfigInt(map['tabWidth']);
+    final proseWrap =
+        _parseConfigProseWrap(map['prose_wrap']) ??
+        _parseConfigProseWrap(map['proseWrap']);
+    final ulStyle =
+        _parseConfigUlStyle(map['ul_style']) ??
+        _parseConfigUlStyle(map['ulStyle']);
+
+    if (printWidth == null &&
+        tabWidth == null &&
+        proseWrap == null &&
+        ulStyle == null) {
+      return null;
+    }
+
+    return FormatOptions(
+      printWidth: printWidth ?? 80,
+      tabWidth: tabWidth ?? 2,
+      proseWrap: proseWrap ?? ProseWrap.preserve,
+      ulStyle: ulStyle ?? UnorderedListStyle.dash,
+    );
+  }
+
+  int? _parseConfigInt(dynamic value) {
+    if (value is int) return value;
+    if (value is String) return int.tryParse(value);
+    return null;
+  }
+
+  ProseWrap? _parseConfigProseWrap(dynamic value) {
+    if (value is! String) return null;
+    return switch (value.toLowerCase()) {
+      'always' => ProseWrap.always,
+      'never' => ProseWrap.never,
+      'preserve' => ProseWrap.preserve,
+      _ => null,
+    };
+  }
+
+  UnorderedListStyle? _parseConfigUlStyle(dynamic value) {
+    if (value is! String) return null;
+    return switch (value.toLowerCase()) {
+      'dash' || '-' => UnorderedListStyle.dash,
+      'asterisk' || '*' => UnorderedListStyle.asterisk,
+      'plus' || '+' => UnorderedListStyle.plus,
+      _ => null,
+    };
   }
 }
 
-bool _isFormattableFile(String path) {
-  final lowerPath = path.toLowerCase();
-  return lowerPath.endsWith('.md') ||
-      lowerPath.endsWith('.markdown') ||
-      lowerPath.endsWith('.yaml') ||
-      lowerPath.endsWith('.yml');
-}
-
-String _formatFile(String filePath, String content, FormatOptions options) {
-  final lowerPath = filePath.toLowerCase();
-
-  if (lowerPath.endsWith('.md') || lowerPath.endsWith('.markdown')) {
-    return formatMarkdown(content, options: options);
-  }
-
-  if (lowerPath.endsWith('.yaml') || lowerPath.endsWith('.yml')) {
-    return formatYaml(content, options: options);
-  }
-
-  return content;
+/// Extracts the basename from a file path.
+String _basename(String path) {
+  return Uri.file(path).pathSegments.lastWhere((s) => s.isNotEmpty);
 }

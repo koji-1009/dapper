@@ -1,12 +1,12 @@
 name: dapper
 description: A simple Markdown and YAML formatter for Dart, inspired by Prettier.
 version: 0.1.0
-# repository: https://github.com/my_org/my_repo
+repository: https://github.com/koji-1009/dapper
+issue_tracker: https://github.com/koji-1009/dapper/issues
 
 environment:
-  sdk: ^3.10.7
+  sdk: ^3.8.0
 
-# Add regular dependencies here.
 dependencies:
   args: ^2.7.0
   markdown: ^7.3.0

@@ -186,6 +186,16 @@ Term 2
         expect(result, contains('- Item 2'));
         expect(result, isNot(contains('-   Item 1')));
       });
+
+      test('normalizes spaces in headings', () {
+        final result = formatter.format('#    Heading');
+        expect(result.trim(), '# Heading');
+      });
+
+      test('normalizes spaces in blockquotes', () {
+        final result = formatter.format('>    Blockquote');
+        expect(result.trim(), '> Blockquote');
+      });
     });
 
     group('Table formatting', () {

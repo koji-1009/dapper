@@ -259,7 +259,7 @@ class MarkdownPrinter {
             normalizeWhitespace(content.toString()),
             options.printWidth - savedIndent - 2,
           )
-        : [content.toString()];
+        : [content.toString().trim()];
 
     _currentIndent = savedIndent;
 

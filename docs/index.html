@@ -1,0 +1,245 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="description" content="Dapper - A simple Markdown and YAML formatter for Dart. Try the interactive demo.">
+  <title>Dapper - Markdown & YAML Formatter</title>
+  <link rel="stylesheet" href="style.css">
+</head>
+
+<body>
+  <div class="container">
+    <header>
+      <h1>✨ Dapper</h1>
+      <p class="tagline">A simple Markdown & YAML formatter for Dart</p>
+      <div class="links">
+        <a href="https://github.com/koji-1009/dapper" target="_blank" rel="noopener">GitHub</a>
+        <a href="https://pub.dev/packages/dapper" target="_blank" rel="noopener">pub.dev</a>
+      </div>
+    </header>
+
+    <main>
+      <div class="tabs">
+        <button class="tab active" data-format="markdown">Markdown</button>
+        <button class="tab" data-format="yaml">YAML</button>
+      </div>
+
+      <div class="options" id="markdownOptions">
+        <div class="option-group">
+          <label for="proseWrap">Prose Wrap</label>
+          <select id="proseWrap">
+            <option value="preserve" selected>preserve</option>
+            <option value="always">always</option>
+            <option value="never">never</option>
+          </select>
+        </div>
+        <div class="option-group">
+          <label for="printWidth">Print Width</label>
+          <input type="number" id="printWidth" value="80" min="40" max="200">
+        </div>
+        <div class="option-group">
+          <label for="ulStyle">List Style</label>
+          <select id="ulStyle">
+            <option value="dash" selected>dash (-)</option>
+            <option value="asterisk">asterisk (*)</option>
+            <option value="plus">plus (+)</option>
+          </select>
+        </div>
+      </div>
+
+      <div class="editor-container">
+        <div class="panel">
+          <div class="panel-header">
+            <span>Input</span>
+            <div class="sample-buttons">
+              <button class="sample-btn" data-sample="markdown-messy">Messy MD</button>
+              <button class="sample-btn" data-sample="markdown-table">Table</button>
+              <button class="sample-btn" data-sample="yaml-messy">Messy YAML</button>
+            </div>
+          </div>
+          <textarea id="input" placeholder="Enter your Markdown or YAML here..."></textarea>
+        </div>
+
+        <div class="divider">
+          <button id="formatBtn" title="Format">
+            <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+              <path d="M5 12h14M12 5l7 7-7 7" />
+            </svg>
+          </button>
+        </div>
+
+        <div class="panel">
+          <div class="panel-header">
+            <span>Output</span>
+            <button id="copyBtn" class="copy-btn" title="Copy to clipboard">
+              <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                <rect x="9" y="9" width="13" height="13" rx="2" ry="2"></rect>
+                <path d="M5 15H4a2 2 0 01-2-2V4a2 2 0 012-2h9a2 2 0 012 2v1"></path>
+              </svg>
+            </button>
+          </div>
+          <textarea id="output" placeholder="Formatted output will appear here..." readonly></textarea>
+        </div>
+      </div>
+
+      <div id="error" class="error hidden"></div>
+    </main>
+
+    <footer>
+      <p>Built with <a href="https://dart.dev" target="_blank" rel="noopener">Dart</a> • <a
+          href="https://github.com/koji-1009/dapper/blob/main/LICENSE" target="_blank" rel="noopener">MIT License</a>
+      </p>
+    </footer>
+  </div>
+
+  <script src="dapper.js"></script>
+  <script>
+    const samples = {
+      'markdown-messy': `# Hello World
+
+*emphasis* and **strong** text with ___mixed styles___
+
+- item 1
+  -   nested item with extra spaces
+      - deeply nested
+* mixed bullet styles
++ cause inconsistency
+
+1. First
+2.  Second with extra space
+10.  Numbers misaligned
+
+| Name | Age |
+|--|--|
+| Alice | 30 |
+| Bob | 25 |
+`,
+      'markdown-table': `| Name | Age | City | Country |
+|--|--|--|--|
+|Alice|30|Tokyo|Japan|
+|Bob|25|New York|USA|
+|Charlie|35|London|UK|
+`,
+      'yaml-messy': `# Application config
+name:   myapp
+version:  1.0.0
+dependencies:
+    flutter:
+         sdk:  flutter
+    http:    ^0.13.0
+    json_annotation:   ^4.8.0
+    
+dev_dependencies:
+  build_runner:   ^2.4.0
+  json_serializable:  ^6.7.0
+`
+    };
+
+    let currentFormat = 'markdown';
+
+    // Initialize
+    document.addEventListener('DOMContentLoaded', () => {
+      // Set initial sample
+      document.getElementById('input').value = samples['markdown-messy'];
+      format();
+    });
+
+    // Tab switching
+    document.querySelectorAll('.tab').forEach(tab => {
+      tab.addEventListener('click', () => {
+        document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
+        tab.classList.add('active');
+        currentFormat = tab.dataset.format;
+
+        // Show/hide markdown options
+        const options = document.getElementById('markdownOptions');
+        options.style.display = currentFormat === 'markdown' ? 'flex' : 'none';
+
+        // Load appropriate sample
+        const sampleKey = currentFormat === 'markdown' ? 'markdown-messy' : 'yaml-messy';
+        document.getElementById('input').value = samples[sampleKey];
+        format();
+      });
+    });
+
+    // Sample buttons
+    document.querySelectorAll('.sample-btn').forEach(btn => {
+      btn.addEventListener('click', () => {
+        const sample = samples[btn.dataset.sample];
+        if (sample) {
+          // Switch tab if needed
+          const isYaml = btn.dataset.sample.startsWith('yaml');
+          if ((isYaml && currentFormat !== 'yaml') || (!isYaml && currentFormat !== 'markdown')) {
+            document.querySelector(`.tab[data-format="${isYaml ? 'yaml' : 'markdown'}"]`).click();
+          }
+          document.getElementById('input').value = sample;
+          format();
+        }
+      });
+    });
+
+    // Format button
+    document.getElementById('formatBtn').addEventListener('click', format);
+
+    // Auto-format on input change (debounced)
+    let debounceTimer;
+    document.getElementById('input').addEventListener('input', () => {
+      clearTimeout(debounceTimer);
+      debounceTimer = setTimeout(format, 300);
+    });
+
+    // Option changes
+    ['proseWrap', 'printWidth', 'ulStyle'].forEach(id => {
+      document.getElementById(id).addEventListener('change', format);
+    });
+
+    // Copy button
+    document.getElementById('copyBtn').addEventListener('click', async () => {
+      const output = document.getElementById('output').value;
+      try {
+        await navigator.clipboard.writeText(output);
+        const btn = document.getElementById('copyBtn');
+        btn.classList.add('copied');
+        setTimeout(() => btn.classList.remove('copied'), 1500);
+      } catch (err) {
+        console.error('Failed to copy:', err);
+      }
+    });
+
+    function format() {
+      const input = document.getElementById('input').value;
+      const errorEl = document.getElementById('error');
+      const outputEl = document.getElementById('output');
+
+      if (!input.trim()) {
+        outputEl.value = '';
+        errorEl.classList.add('hidden');
+        return;
+      }
+
+      try {
+        let result;
+        if (currentFormat === 'markdown') {
+          const options = {
+            proseWrap: document.getElementById('proseWrap').value,
+            printWidth: parseInt(document.getElementById('printWidth').value, 10),
+            ulStyle: document.getElementById('ulStyle').value
+          };
+          result = formatMarkdown(input, options);
+        } else {
+          result = formatYaml(input);
+        }
+        errorEl.classList.add('hidden');
+        outputEl.value = result;
+      } catch (err) {
+        errorEl.textContent = err.message || String(err);
+        errorEl.classList.remove('hidden');
+        outputEl.value = '';
+      }
+    }
+  </script>
+</body>
+
+</html>

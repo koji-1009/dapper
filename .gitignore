@@ -7,3 +7,8 @@
 pubspec.lock
 
 coverage/
+
+# Generated files (built by GitHub Actions)
+docs/dapper.js
+docs/dapper.js.deps
+docs/dapper.js.map

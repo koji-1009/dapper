@@ -207,7 +207,6 @@ ratio: 1.5''';
     });
 
     test('handles non-standard types by calling toString', () {
-      // This tests the fallback case in _printValue
       final result = formatter.format('date: 2024-01-01');
       expect(result, contains('2024-01-01'));
     });
@@ -229,6 +228,180 @@ ratio: 1.5''';
       expect(result, contains('level1:'));
       expect(result, contains('level4: value'));
     });
+
+    // Formatting specific tests (from yaml_formatting_test.dart)
+
+    test('trims leading newlines', () {
+      const input = '\n\nname: dapper';
+      const expected = 'name: dapper\n';
+      expect(formatYaml(input), expected);
+    });
+
+    test('preserves single blank line between top-level items', () {
+      const input = '''
+name: dapper
+
+description: nice
+''';
+      const expected = '''
+name: dapper
+
+description: nice
+''';
+      expect(formatYaml(input), expected);
+    });
+
+    test('normalizes multiple blank lines to one', () {
+      const input = '''
+name: dapper
+
+
+description: nice
+''';
+      const expected = '''
+name: dapper
+
+description: nice
+''';
+      expect(formatYaml(input), expected);
+    });
+
+    test('maintains tight spacing if no blank line exists', () {
+      const input = '''
+name: dapper
+description: nice
+''';
+      const expected = '''
+name: dapper
+description: nice
+''';
+      expect(formatYaml(input), expected);
+    });
+
+    test('preserves blank line before top-level comment', () {
+      const input = '''
+version: 0.1.0
+
+# Comment
+environment:
+''';
+      const expected = '''
+version: 0.1.0
+
+# Comment
+environment:
+''';
+      expect(formatYaml(input), expected);
+    });
+
+    test('removes blank line before comment if none existed', () {
+      const input = '''
+version: 0.1.0
+# Comment
+environment:
+''';
+      const expected = '''
+version: 0.1.0
+# Comment
+environment:
+''';
+      expect(formatYaml(input), expected);
+    });
+
+    test('preserves blank line after comment', () {
+      const input = '''
+# Comment
+
+environment:
+''';
+      const expected = '''
+# Comment
+
+environment:
+''';
+      expect(formatYaml(input), expected);
+    });
+
+    test('handles list with comments', () {
+      const input = '''
+dependencies:
+  # comment
+  yaml: ^3.0.0
+''';
+      const expected = '''
+dependencies:
+  # comment
+  yaml: ^3.0.0
+''';
+      expect(formatYaml(input), expected);
+    });
+
+    test('handles inline comments', () {
+      const input = 'key: value # inline';
+      const expected = 'key: value # inline\n';
+      expect(formatYaml(input), expected);
+    });
+
+    test('preserves original indentation for section comments', () {
+      const input = '''
+root:
+  child: value
+# Section
+  child2: value
+''';
+      const expected = '''
+root:
+  child: value
+# Section
+  child2: value
+''';
+      expect(formatYaml(input), expected);
+    });
+
+    test('handles quoted scalars', () {
+      expect(formatYaml("key: 'single'"), "key: 'single'\n");
+      expect(formatYaml('key: "double"'), 'key: "double"\n');
+      expect(formatYaml('key: :unsafe'), 'key: ":unsafe"\n');
+    });
+
+    test('handles nested lists', () {
+      const input = '''
+list:
+  - - a
+    - b
+''';
+      const expected = '''
+list:
+  - 
+    - a
+    - b
+''';
+      expect(formatYaml(input), expected);
+    });
+
+    test('converts inline block map to block format', () {
+      const input = 'key: { a: 1 }';
+      const expected = '''
+key:
+  a: 1
+''';
+      expect(formatYaml(input), expected);
+    });
+
+    test('handles inline map with leading comment in list', () {
+      const input = 'list: [ { # c\n a: 1 } ]';
+      expect(formatYaml(input), contains('a: 1'));
+    });
+
+    test('handles flow map converted to block', () {
+      const input = 'key: { a: 1, b: 2 }';
+      const expected = '''
+key:
+  a: 1
+  b: 2
+''';
+      expect(formatYaml(input), expected);
+    });
   });
 
   group('formatYaml convenience function', () {
@@ -244,6 +417,7 @@ ratio: 1.5''';
       );
       expect(result, contains('name: test'));
     });
+
     test('handles unknown tags in list', () {
       final formatter = YamlFormatter();
       final input = '- !!custom value';

@@ -2,6 +2,7 @@
 //
 // Usage: dapper [options] <files or directories...>
 
+import 'dart:convert';
 import 'dart:io';
 
 import 'package:args/args.dart';
@@ -30,12 +31,13 @@ void main(List<String> arguments) {
       'output',
       abbr: 'o',
       defaultsTo: 'write',
-      allowed: ['write', 'show', 'none'],
+      allowed: ['write', 'show', 'json', 'none'],
       help: 'Set where to write formatted output.',
       valueHelp: 'mode',
       allowedHelp: {
         'write': 'Overwrite formatted files on disk.',
         'show': 'Print code to terminal.',
+        'json': 'Print code as JSON.',
         'none': 'Discard output.',
       },
     )
@@ -229,6 +231,9 @@ _ProcessResult _processFile(
         }
       case 'show':
         stdout.write(formatted);
+      case 'json':
+        final json = jsonEncode({'path': filePath, 'source': formatted});
+        stdout.writeln(json);
       case 'none':
         // Discard output, just check for changes
         break;

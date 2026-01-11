@@ -1,6 +1,6 @@
 # Dapper
 
-A simple Markdown (and YAML) formatter for Dart, inspired by Prettier.
+A simple Markdown and YAML formatter for Dart, inspired by Prettier.
 
 ## Features
 
@@ -23,12 +23,7 @@ A simple Markdown (and YAML) formatter for Dart, inspired by Prettier.
 - **List formatting**: Block style with proper indentation
 - **Nested structures**: Deep map/list nesting
 - **String quoting**: Automatic quoting for special values
-
-### Format Options
-
-- `printWidth`: Maximum line width (default: 80)
-- `tabWidth`: Spaces per indentation level (default: 2)
-- `proseWrap`: `always` | `never` | `preserve`
+- **Comment preservation**: Inline and block comments preserved
 
 ## Usage
 
@@ -36,9 +31,7 @@ A simple Markdown (and YAML) formatter for Dart, inspired by Prettier.
 import 'package:dapper/dapper.dart';
 
 void main() {
-  final formatter = MarkdownFormatter();
-  
-  final result = formatter.format('''
+  final result = formatMarkdown('''
 # Hello
 
 *emphasis* and **strong**
@@ -55,8 +48,9 @@ void main() {
 ### With Options
 
 ```dart
-final formatter = MarkdownFormatter(
-  const FormatOptions(
+final result = formatMarkdown(
+  content,
+  options: const FormatOptions(
     proseWrap: ProseWrap.always,
     printWidth: 60,
   ),
@@ -72,10 +66,13 @@ dart run dapper README.md
 # Show formatted output without writing
 dart run dapper -o show README.md
 
+# Output as JSON
+dart run dapper -o json README.md
+
 # Check if files need formatting (for CI)
 dart run dapper -o none --set-exit-if-changed .
 
-# Format all markdown files in a directory
+# Format all markdown/yaml files in a directory
 dart run dapper docs/
 ```
 
@@ -88,10 +85,40 @@ Usage: dapper [options] <files or directories...>
 -o, --output=<mode>            Set where to write formatted output.
           [write] (default)    Overwrite formatted files on disk.
           [show]               Print code to terminal.
+          [json]               Print code as JSON.
           [none]               Discard output.
     --set-exit-if-changed      Return exit code 1 if there are any changes.
     --print-width=<int>        Maximum line width. (default: 80)
     --prose-wrap=<mode>        How to wrap prose. [always, never, preserve]
+```
+
+## Configuration
+
+Dapper can be configured via configuration files. Options are read in this order (later overrides earlier):
+
+1. **Default values**
+2. **`analysis_options.yaml`** (in `dapper:` block)
+3. **`dapper.yaml`** (project root)
+4. **CLI arguments** (highest priority)
+
+### dapper.yaml
+
+```yaml
+print_width: 100
+tab_width: 4
+prose_wrap: always
+ul_style: asterisk  # dash, asterisk, or plus
+```
+
+### analysis_options.yaml
+
+```yaml
+analyzer:
+  # ...your analyzer settings
+
+dapper:
+  print_width: 100
+  prose_wrap: preserve
 ```
 
 ### CI Integration
@@ -101,6 +128,15 @@ Usage: dapper [options] <files or directories...>
 - name: Check formatting
   run: dart run dapper -o none --set-exit-if-changed .
 ```
+
+## Format Options
+
+| Option       | Type   | Default    | Markdown | YAML |
+| ------------ | ------ | ---------- | -------- | ---- |
+| `printWidth` | int    | 80         | ✓        | ✗    |
+| `tabWidth`   | int    | 2          | ✓        | ✓    |
+| `proseWrap`  | string | `preserve` | ✓        | ✗    |
+| `ulStyle`    | string | `dash`     | ✓        | ✗    |
 
 ## Dropped Features
 
@@ -116,11 +152,11 @@ The following features are intentionally not supported to keep the implementatio
 # Run tests
 dart test
 
-# Run example
-dart run example/format_example.dart
-
 # Analyze
 dart analyze
+
+# Format the project itself
+dart run bin/dapper.dart .
 ```
 
 ## License

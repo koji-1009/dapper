@@ -47,6 +47,18 @@ enum ProseWrap {
   preserve,
 }
 
+/// Style for unordered list bullets in Markdown.
+enum UnorderedListStyle {
+  /// Use hyphens for bullets (e.g. - item).
+  dash,
+
+  /// Use asterisks for bullets (e.g. * item).
+  asterisk,
+
+  /// Use plus signs for bullets (e.g. + item).
+  plus,
+}
+
 /// Options for controlling formatter behavior.
 ///
 /// Use these options to customize how Markdown and YAML files are formatted.
@@ -78,16 +90,25 @@ class FormatOptions {
   /// Default is [ProseWrap.preserve].
   final ProseWrap proseWrap;
 
+  /// Style for unordered list bullets.
+  ///
+  /// **Applies to:** Markdown only
+  ///
+  /// Default is [UnorderedListStyle.dash].
+  final UnorderedListStyle ulStyle;
+
   /// Creates formatting options with the specified values.
   ///
   /// All parameters are optional and have sensible defaults:
   /// - [printWidth]: 80
   /// - [tabWidth]: 2
   /// - [proseWrap]: [ProseWrap.preserve]
+  /// - [ulStyle]: [UnorderedListStyle.dash]
   const FormatOptions({
     this.printWidth = 80,
     this.tabWidth = 2,
     this.proseWrap = ProseWrap.preserve,
+    this.ulStyle = UnorderedListStyle.dash,
   });
 
   /// Default formatting options matching Prettier defaults.
@@ -98,11 +119,13 @@ class FormatOptions {
     int? printWidth,
     int? tabWidth,
     ProseWrap? proseWrap,
+    UnorderedListStyle? ulStyle,
   }) {
     return FormatOptions(
       printWidth: printWidth ?? this.printWidth,
       tabWidth: tabWidth ?? this.tabWidth,
       proseWrap: proseWrap ?? this.proseWrap,
+      ulStyle: ulStyle ?? this.ulStyle,
     );
   }
 
@@ -113,15 +136,17 @@ class FormatOptions {
           runtimeType == other.runtimeType &&
           printWidth == other.printWidth &&
           tabWidth == other.tabWidth &&
-          proseWrap == other.proseWrap;
+          proseWrap == other.proseWrap &&
+          ulStyle == other.ulStyle;
 
   @override
-  int get hashCode => Object.hash(printWidth, tabWidth, proseWrap);
+  int get hashCode => Object.hash(printWidth, tabWidth, proseWrap, ulStyle);
 
   @override
   String toString() =>
       'FormatOptions('
       'printWidth: $printWidth, '
       'tabWidth: $tabWidth, '
-      'proseWrap: $proseWrap)';
+      'proseWrap: $proseWrap, '
+      'ulStyle: $ulStyle)';
 }

@@ -134,7 +134,14 @@ class MarkdownPrinter {
     for (final child in element.children ?? <md.Node>[]) {
       if (child is md.Element && child.tag == 'li') {
         _writeIndent();
-        _write('- ');
+
+        final bullet = switch (options.ulStyle) {
+          UnorderedListStyle.dash => '- ',
+          UnorderedListStyle.asterisk => '* ',
+          UnorderedListStyle.plus => '+ ',
+        };
+        _write(bullet);
+
         _currentIndent += 2;
         _printListItemContent(child);
         _currentIndent -= 2;

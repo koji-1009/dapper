@@ -14,7 +14,6 @@ class MarkdownPrinter {
   final FormatOptions options;
   final StringBuffer _buffer = StringBuffer();
   int _currentIndent = 0;
-  bool _atLineStart = true;
   bool _needsBlankLine = false;
 
   MarkdownPrinter(this.options);
@@ -23,7 +22,6 @@ class MarkdownPrinter {
   String print(List<md.Node> nodes) {
     _buffer.clear();
     _currentIndent = 0;
-    _atLineStart = true;
     _needsBlankLine = false;
 
     for (final node in nodes) {
@@ -600,17 +598,14 @@ class MarkdownPrinter {
 
   void _write(String text) {
     _buffer.write(text);
-    _atLineStart = false;
   }
 
   void _writeLine(String text) {
     _buffer.writeln(text);
-    _atLineStart = true;
   }
 
   void _newLine() {
     _buffer.writeln();
-    _atLineStart = true;
   }
 
   void _writeIndent() {
@@ -620,9 +615,6 @@ class MarkdownPrinter {
   }
 
   void _ensureBlankLine() {
-    if (_needsBlankLine && !_atLineStart) {
-      _newLine();
-    }
     if (_needsBlankLine) {
       _newLine();
     }

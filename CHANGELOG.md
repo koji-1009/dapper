@@ -1,3 +1,9 @@
+## 1.0.2
+
+### Fixed
+
+- Correctly handle nested lists with varying indentation levels
+
 ## 1.0.1
 
 ### Fixed

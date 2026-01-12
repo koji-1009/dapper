@@ -1,5 +1,4 @@
 import 'dart:js_interop';
-import 'dart:js_interop_unsafe';
 
 import 'package:dapper/dapper.dart';
 
@@ -10,23 +9,36 @@ external set _formatMarkdown(JSFunction fn);
 external set _formatYaml(JSFunction fn);
 
 void main() {
-  _formatMarkdown = ((JSString s, [JSObject? o]) => formatMarkdown(
+  _formatMarkdown = ((JSString s, [MarkdownOptions? o]) => formatMarkdown(
     s.toDart,
-    options: FormatOptions(
-      proseWrap: _enum(ProseWrap.values, o?['proseWrap'], ProseWrap.preserve),
-      printWidth: (o?['printWidth'] as JSNumber?)?.toDartInt ?? 80,
-      ulStyle: _enum(
-        UnorderedListStyle.values,
-        o?['ulStyle'],
-        UnorderedListStyle.dash,
-      ),
-    ),
+    options: o != null
+        ? FormatOptions(
+            proseWrap: o.proseWrapDart,
+            printWidth: o.printWidthDart,
+            ulStyle: o.ulStyleDart,
+          )
+        : null,
   ).toJS).toJS;
 
   _formatYaml = ((JSString s) => formatYaml(s.toDart).toJS).toJS;
 }
 
-T _enum<T extends Enum>(List<T> values, JSAny? v, T def) {
-  final name = v != null && v.isA<JSString>() ? (v as JSString).toDart : null;
-  return values.firstWhere((e) => e.name == name, orElse: () => def);
+extension type const MarkdownOptions._(JSObject o) implements JSObject {
+  external String? get proseWrap;
+  external int? get printWidth;
+  external String? get ulStyle;
+
+  ProseWrap get proseWrapDart => switch (proseWrap) {
+    'always' => ProseWrap.always,
+    'never' => ProseWrap.never,
+    'preserve' => ProseWrap.preserve,
+    _ => ProseWrap.preserve,
+  };
+  int get printWidthDart => printWidth ?? 80;
+  UnorderedListStyle get ulStyleDart => switch (ulStyle) {
+    'dash' => UnorderedListStyle.dash,
+    'asterisk' => UnorderedListStyle.asterisk,
+    'plus' => UnorderedListStyle.plus,
+    _ => UnorderedListStyle.dash,
+  };
 }

@@ -9,6 +9,9 @@ topics:
   - yaml
   - cli
 
+executables:
+  dapper: dapper
+
 environment:
   sdk: ^3.8.0
 

@@ -1,3 +1,9 @@
+## Next
+
+### Fixed
+
+- Add missing `executables` section to enable `dart pub global activate dapper` to work correctly
+
 ## 1.0.4
 
 ### Changed

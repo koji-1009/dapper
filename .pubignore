@@ -1,0 +1,9 @@
+# GitHub Pages demo site
+docs/
+web/
+
+# Test files
+test/
+
+# Test coverage reports
+coverage/

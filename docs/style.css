@@ -358,4 +358,8 @@ footer a:hover {
   .container {
     padding: 1rem;
   }
+
+  .panel {
+    min-height: 360px;
+  }
 }

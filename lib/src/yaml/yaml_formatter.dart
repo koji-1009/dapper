@@ -366,9 +366,20 @@ class _YamlPrinter {
 
     String text;
     if (scalar.style == ScalarStyle.SINGLE_QUOTED) {
-      text = "'${value.toString()}'";
+      // Escape single quotes by doubling them
+      text = "'${value.toString().replaceAll("'", "''")}'";
     } else if (scalar.style == ScalarStyle.DOUBLE_QUOTED) {
-      text = '"${value.toString()}"';
+      // Escape backslashes and double quotes
+      var encoded = value
+          .toString()
+          .replaceAll(r'\', r'\\')
+          .replaceAll('"', r'\"')
+          .replaceAll('\n', r'\n')
+          .replaceAll('\r', r'\r')
+          .replaceAll('\t', r'\t')
+          .replaceAll('\b', r'\b')
+          .replaceAll('\f', r'\f');
+      text = '"$encoded"';
     } else if (scalar.style == ScalarStyle.LITERAL) {
       _printBlockScalar(value.toString(), '|');
       return;
@@ -378,7 +389,8 @@ class _YamlPrinter {
     } else {
       text = value.toString();
       if (_needsQuoting(text)) {
-        text = '"${text.replaceAll('"', r'\"').replaceAll('\n', r'\n')}"';
+        text =
+            '"${text.replaceAll(r'\', r'\\').replaceAll('"', r'\"').replaceAll('\n', r'\n')}"';
       }
     }
     _write(text);

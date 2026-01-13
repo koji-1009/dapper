@@ -416,6 +416,49 @@ jobs:
 ''';
       expect(formatYaml(input), expected);
     });
+    group('String escaping regression tests', () {
+      test('Double quoted string with backslashes', () {
+        const input = r'key: "test\\ntest"';
+        final formatted = formatter.format(input);
+        expect(formatted.trim(), equals(r'key: "test\\ntest"'));
+      });
+
+      test('Double quoted string with double quotes', () {
+        const input = r'key: "test\"quot\""';
+        final formatted = formatter.format(input);
+        expect(formatted.trim(), equals(r'key: "test\"quot\""'));
+      });
+
+      test('Double quoted string with control characters', () {
+        const input = 'key: "line1\\nline2\\tbit"';
+        final formatted = formatter.format(input);
+        expect(formatted.trim(), equals('key: "line1\\nline2\\tbit"'));
+      });
+
+      test('Single quoted string with single quotes', () {
+        const input = "key: 'it''s a test'";
+        final formatted = formatter.format(input);
+        expect(formatted.trim(), equals("key: 'it''s a test'"));
+      });
+
+      test('Bare string that needs quoting due to backslash', () {
+        const input = r'key: c:\windows\path';
+        final formatted = formatter.format(input);
+        expect(formatted.trim(), equals(r'key: c:\windows\path'));
+      });
+
+      test('Bare string that needs quoting due to control char', () {
+        const input = 'key: "true"';
+        final formatted = formatter.format(input);
+        expect(formatted.trim(), equals('key: "true"'));
+      });
+
+      test('Preserve complex escaping', () {
+        const input = r'key: "a \" b \\ c \n d"';
+        final formatted = formatter.format(input);
+        expect(formatted.trim(), equals(r'key: "a \" b \\ c \n d"'));
+      });
+    });
   });
 
   group('formatYaml convenience function', () {

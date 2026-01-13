@@ -38,8 +38,8 @@ void main() {
 
     test('formats unordered list', () {
       final result = formatter.format('- item 1\n- item 2');
-      expect(result, contains('- item 1'));
-      expect(result, contains('- item 2'));
+      expect(result, contains('* item 1'));
+      expect(result, contains('* item 2'));
     });
 
     test('formats ordered list', () {
@@ -154,11 +154,11 @@ Term 2
         - L5
 ''';
         final result = formatter.format(input);
-        expect(result, contains('- L1'));
-        expect(result, contains('- L2'));
-        expect(result, contains('- L3'));
-        expect(result, contains('- L4'));
-        expect(result, contains('- L5'));
+        expect(result, contains('* L1'));
+        expect(result, contains('* L2'));
+        expect(result, contains('* L3'));
+        expect(result, contains('* L4'));
+        expect(result, contains('* L5'));
       });
 
       test('does not insert extra blank lines between nested list items', () {
@@ -171,14 +171,14 @@ Term 2
 ''';
         final result = formatter.format(input);
         // Should not have blank lines between parent and child list items
-        expect(result, isNot(contains('clock)\n\n  -')));
-        expect(result, isNot(contains('crypto)\n\n  -')));
-        expect(result, isNot(contains('image)\n\n  -')));
+        expect(result, isNot(contains('clock)\n\n  *')));
+        expect(result, isNot(contains('crypto)\n\n  *')));
+        expect(result, isNot(contains('image)\n\n  *')));
         // Verify the nested structure is preserved
-        expect(result, contains('- [clock]'));
-        expect(result, contains('  - Get current time'));
-        expect(result, contains('- [crypto]'));
-        expect(result, contains('  - Get persistent file name'));
+        expect(result, contains('* [clock]'));
+        expect(result, contains('  * Get current time'));
+        expect(result, contains('* [crypto]'));
+        expect(result, contains('  * Get persistent file name'));
       });
 
       test('preserves nested list structure with mixed content', () {
@@ -197,17 +197,17 @@ Term 2
     });
 
     group('List marker normalization', () {
-      test('normalizes * to -', () {
-        final result = formatter.format('* item 1\n* item 2');
-        expect(result, contains('- item 1'));
-        expect(result, contains('- item 2'));
-        expect(result, isNot(contains('* item')));
+      test('normalizes - to *', () {
+        final result = formatter.format('- item 1\n- item 2');
+        expect(result, contains('* item 1'));
+        expect(result, contains('* item 2'));
+        expect(result, isNot(contains('- item')));
       });
 
-      test('normalizes + to -', () {
+      test('normalizes + to *', () {
         final result = formatter.format('+ item 1\n+ item 2');
-        expect(result, contains('- item 1'));
-        expect(result, contains('- item 2'));
+        expect(result, contains('* item 1'));
+        expect(result, contains('* item 2'));
       });
 
       test('normalizes spaces in list items', () {
@@ -216,9 +216,9 @@ Term 2
 *    Item 2
 ''';
         final result = formatter.format(input);
-        expect(result, contains('- Item 1'));
-        expect(result, contains('- Item 2'));
-        expect(result, isNot(contains('-   Item 1')));
+        expect(result, contains('* Item 1'));
+        expect(result, contains('* Item 2'));
+        expect(result, isNot(contains('*   Item 1')));
       });
 
       test('normalizes spaces in headings', () {
@@ -339,7 +339,7 @@ Term 2
         final result = wrapFormatter.format(
           '- This is a very long list item that should wrap at the width',
         );
-        expect(result, contains('-'));
+        expect(result, contains('*'));
       });
 
       test('wraps definition descriptions', () {

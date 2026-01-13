@@ -45,8 +45,8 @@ Dapper is a _fantastic_ formatter.
 
 ## Features
 
-- YAML formatting
-- Markdown formatting
+* YAML formatting
+* Markdown formatting
 
 ## Code Example
 
@@ -85,9 +85,9 @@ Term
       const expected = '''
 # Heading with spaces
 
-- Misaligned list item
-- Nested item
-- Emphasis: _bold_
+* Misaligned list item
+* Nested item
+* Emphasis: _bold_
 
 | Column 1 | Column 2 |
 | -------- |:--------:|

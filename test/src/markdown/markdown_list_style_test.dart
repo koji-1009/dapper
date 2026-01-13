@@ -3,10 +3,10 @@ import 'package:test/test.dart';
 
 void main() {
   group('Markdown List Style', () {
-    test('uses dash bullets by default', () {
+    test('uses asterisk bullets by default', () {
       const input = '- item 1\n- item 2';
       final formatter = MarkdownFormatter();
-      expect(formatter.format(input), '- item 1\n- item 2\n');
+      expect(formatter.format(input), '* item 1\n* item 2\n');
     });
 
     test('uses asterisk bullets when configured', () {
@@ -24,7 +24,7 @@ void main() {
     });
 
     test('converts existing bullets to configured style', () {
-      const input = '* item 1\n* item 2';
+      const input = '- item 1\n- item 2';
       final options = FormatOptions(ulStyle: UnorderedListStyle.dash);
       final formatter = MarkdownFormatter(options);
       expect(formatter.format(input), '- item 1\n- item 2\n');

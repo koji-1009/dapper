@@ -7,7 +7,7 @@ void main() {
 
   // 1. Markdown Example
   // Demonstrates:
-  // - List alignment normalization
+  // - List marker normalization (-, + -> *)
   // - Emphasis normalization (* -> _)
   // - Table alignment
   // - Checkbox formatting

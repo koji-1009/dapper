@@ -169,7 +169,7 @@ class DapperCli {
       printWidth: cliPrintWidth ?? configOptions?.printWidth ?? 80,
       tabWidth: configOptions?.tabWidth ?? 2,
       proseWrap: cliProseWrap ?? configOptions?.proseWrap ?? ProseWrap.preserve,
-      ulStyle: configOptions?.ulStyle ?? UnorderedListStyle.dash,
+      ulStyle: configOptions?.ulStyle ?? UnorderedListStyle.asterisk,
     );
   }
 
@@ -437,7 +437,7 @@ class DapperCli {
       printWidth: printWidth ?? 80,
       tabWidth: tabWidth ?? 2,
       proseWrap: proseWrap ?? ProseWrap.preserve,
-      ulStyle: ulStyle ?? UnorderedListStyle.dash,
+      ulStyle: ulStyle ?? UnorderedListStyle.asterisk,
     );
   }
 

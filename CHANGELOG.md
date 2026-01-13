@@ -1,3 +1,13 @@
+## 1.3.2
+
+### Fixed
+
+* Fix `.gitignore` directory patterns (trailing `/`) not being recognized
+
+### Changed
+
+* Refactor CLI code structure for better maintainability
+
 ## 1.3.1
 
 ### Changed

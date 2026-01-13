@@ -94,7 +94,7 @@ class FormatOptions {
   ///
   /// **Applies to:** Markdown only
   ///
-  /// Default is [UnorderedListStyle.dash].
+  /// Default is [UnorderedListStyle.asterisk].
   final UnorderedListStyle ulStyle;
 
   /// Creates formatting options with the specified values.
@@ -103,12 +103,12 @@ class FormatOptions {
   /// - [printWidth]: 80
   /// - [tabWidth]: 2
   /// - [proseWrap]: [ProseWrap.preserve]
-  /// - [ulStyle]: [UnorderedListStyle.dash]
+  /// - [ulStyle]: [UnorderedListStyle.asterisk]
   const FormatOptions({
     this.printWidth = 80,
     this.tabWidth = 2,
     this.proseWrap = ProseWrap.preserve,
-    this.ulStyle = UnorderedListStyle.dash,
+    this.ulStyle = UnorderedListStyle.asterisk,
   });
 
   /// Default formatting options matching Prettier defaults.

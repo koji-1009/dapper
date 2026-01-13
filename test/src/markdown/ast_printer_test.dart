@@ -48,8 +48,8 @@ void main() {
       final li2 = md.Element('li', [md.Text('Item 2')]);
       final ul = md.Element('ul', [li1, li2]);
       final result = printer.print([ul]);
-      expect(result, contains('- Item 1'));
-      expect(result, contains('- Item 2'));
+      expect(result, contains('* Item 1'));
+      expect(result, contains('* Item 2'));
     });
 
     test('prints nested unordered list with proper indentation', () {
@@ -66,9 +66,9 @@ void main() {
       final result = printer.print([topUl]);
 
       // Each list item should be on its own line
-      expect(result, contains('- item 1\n'));
-      expect(result, contains('  - nested item\n'));
-      expect(result, contains('    - deeply nested'));
+      expect(result, contains('* item 1\n'));
+      expect(result, contains('  * nested item\n'));
+      expect(result, contains('    * deeply nested'));
     });
 
     test('prints ordered list', () {
@@ -233,7 +233,7 @@ void main() {
         final li = md.Element('li', [md.Text('This is very long list item')]);
         final ul = md.Element('ul', [li]);
         final result = wrapPrinter.print([ul]);
-        expect(result, contains('-'));
+        expect(result, contains('*'));
       });
 
       test('wraps checkbox item', () {

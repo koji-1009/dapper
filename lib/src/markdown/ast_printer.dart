@@ -102,7 +102,7 @@ class MarkdownPrinter {
   void _printHeading(md.Element element) {
     _ensureBlankLine();
     final level = int.parse(element.tag[1]);
-    final content = _getTextContent(element);
+    final content = _renderInlineContent(element);
     _writeLine(normalizeHeading(level, content));
     _needsBlankLine = true;
   }

@@ -1,3 +1,9 @@
+## Next
+
+### Fixed
+
+- Fixed an issue where Markdown headers stripped inline formatting (e.g. `## `code``).
+
 ## 1.3.4
 
 ### Fixed

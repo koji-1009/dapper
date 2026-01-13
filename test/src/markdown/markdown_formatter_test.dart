@@ -21,6 +21,11 @@ void main() {
       expect(result.trim(), '# Hello World');
     });
 
+    test('formats heading with inline code', () {
+      final result = formatter.format('## `Markdown`');
+      expect(result.trim(), '## `Markdown`');
+    });
+
     test('formats paragraph', () {
       final result = formatter.format('Hello world');
       expect(result.trim(), 'Hello world');

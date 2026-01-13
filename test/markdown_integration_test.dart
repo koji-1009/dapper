@@ -19,6 +19,8 @@ Dapper is a *fantastic* formatter.
 - YAML formatting
 - Markdown formatting
 
+## `dapper` Usage
+
 ## Code Example
 
 ```dart
@@ -47,6 +49,8 @@ Dapper is a _fantastic_ formatter.
 
 * YAML formatting
 * Markdown formatting
+
+## `dapper` Usage
 
 ## Code Example
 

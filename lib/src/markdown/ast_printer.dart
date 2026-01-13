@@ -15,6 +15,7 @@ class MarkdownPrinter {
   final StringBuffer _buffer = StringBuffer();
   int _currentIndent = 0;
   bool _needsBlankLine = false;
+  int _listDepth = 0;
 
   MarkdownPrinter(this.options);
 
@@ -127,8 +128,12 @@ class MarkdownPrinter {
   }
 
   void _printUnorderedList(md.Element element) {
-    _ensureBlankLine();
+    // Only add blank line before top-level lists
+    if (_listDepth == 0) {
+      _ensureBlankLine();
+    }
 
+    _listDepth++;
     for (final child in element.children ?? <md.Node>[]) {
       if (child is md.Element && child.tag == 'li') {
         _writeIndent();
@@ -145,13 +150,18 @@ class MarkdownPrinter {
         _currentIndent -= 2;
       }
     }
+    _listDepth--;
 
     _needsBlankLine = true;
   }
 
   void _printOrderedList(md.Element element) {
-    _ensureBlankLine();
+    // Only add blank line before top-level lists
+    if (_listDepth == 0) {
+      _ensureBlankLine();
+    }
 
+    _listDepth++;
     final items = (element.children ?? <md.Node>[])
         .whereType<md.Element>()
         .where((e) => e.tag == 'li')
@@ -168,6 +178,7 @@ class MarkdownPrinter {
       _printListItemContent(items[i]);
       _currentIndent -= numWidth + 2;
     }
+    _listDepth--;
 
     _needsBlankLine = true;
   }

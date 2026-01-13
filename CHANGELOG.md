@@ -1,8 +1,15 @@
+## Next
+
+### Fixed
+
+- Fix extra blank lines being inserted between nested list items
+
 ## 1.1.0
 
 ### Fixed
 
 - Add missing `executables` section to enable `dart pub global activate dapper` to work correctly
+- Add `.pubignore` to reduce package size
 
 ## 1.0.4
 

@@ -160,6 +160,40 @@ Term 2
         expect(result, contains('- L4'));
         expect(result, contains('- L5'));
       });
+
+      test('does not insert extra blank lines between nested list items', () {
+        final input = '''- [clock](https://pub.dev/packages/clock)
+  - Get current time and mock time
+- [crypto](https://pub.dev/packages/crypto)
+  - Get persistent file name from URL and options
+- [image](https://pub.dev/packages/image)
+  - Resize image
+''';
+        final result = formatter.format(input);
+        // Should not have blank lines between parent and child list items
+        expect(result, isNot(contains('clock)\n\n  -')));
+        expect(result, isNot(contains('crypto)\n\n  -')));
+        expect(result, isNot(contains('image)\n\n  -')));
+        // Verify the nested structure is preserved
+        expect(result, contains('- [clock]'));
+        expect(result, contains('  - Get current time'));
+        expect(result, contains('- [crypto]'));
+        expect(result, contains('  - Get persistent file name'));
+      });
+
+      test('preserves nested list structure with mixed content', () {
+        final input = '''- Parent 1
+  - Child 1a
+  - Child 1b
+- Parent 2
+  - Child 2a
+''';
+        final result = formatter.format(input);
+        // Check no extra blank lines
+        final lines = result.split('\n');
+        final nonEmptyLines = lines.where((l) => l.trim().isNotEmpty).toList();
+        expect(nonEmptyLines.length, 5);
+      });
     });
 
     group('List marker normalization', () {

@@ -1,8 +1,14 @@
+## Next
+
+### Fixed
+
+* Fixed incorrect escaping of backslashes and quotes in double-quoted and single-quoted YAML strings.
+
 ## 1.3.5
 
 ### Fixed
 
-- Fixed an issue where Markdown headers stripped inline formatting (e.g. `## `code``).
+* Fixed an issue where Markdown headers stripped inline formatting (e.g. `## `code``).
 
 ## 1.3.4
 

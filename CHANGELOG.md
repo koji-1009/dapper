@@ -1,3 +1,9 @@
+## Next
+
+### Fixed
+
+* Fix YAML block scalars (`|` and `>`) being converted to double-quoted strings (e.g., in GitHub Actions workflows)
+
 ## 1.3.3
 
 ### Fixed

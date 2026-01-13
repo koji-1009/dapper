@@ -366,16 +366,62 @@ class _YamlPrinter {
 
     String text;
     if (scalar.style == ScalarStyle.SINGLE_QUOTED) {
-      text = "'${value.toString()}'"; // Simple reconstruction
+      text = "'${value.toString()}'";
     } else if (scalar.style == ScalarStyle.DOUBLE_QUOTED) {
       text = '"${value.toString()}"';
+    } else if (scalar.style == ScalarStyle.LITERAL) {
+      _printBlockScalar(value.toString(), '|');
+      return;
+    } else if (scalar.style == ScalarStyle.FOLDED) {
+      _printBlockScalar(value.toString(), '>');
+      return;
     } else {
       text = value.toString();
       if (_needsQuoting(text)) {
-        text = '"${text.replaceAll('"', r'\"')}"';
+        text = '"${text.replaceAll('"', r'\"').replaceAll('\n', r'\n')}"';
       }
     }
     _write(text);
+  }
+
+  void _printBlockScalar(String value, String indicator) {
+    // Determine chomping indicator (clip, strip, keep)
+    // For simplicity, we default to clip (newline at end preserved) unless ends with multiple newlines
+    // But basic implementation:
+    // |
+    //   line1
+    //   line2
+
+    var suffix = '';
+    if (value.endsWith('\n\n')) {
+      suffix = '+'; // keep
+    } else if (!value.endsWith('\n')) {
+      suffix = '-'; // strip
+    }
+
+    _write('$indicator$suffix');
+
+    final lines = value.split('\n');
+    // If strip, the last empty string from split is redundant?
+    // 'a\nb'.split('\n') -> ['a', 'b']
+    // 'a\n'.split('\n') -> ['a', '']
+
+    for (var i = 0; i < lines.length; i++) {
+      final line = lines[i];
+      if (line.isEmpty && i == lines.length - 1 && !value.endsWith('\n\n')) {
+        // Skip last empty line from split if it's just the trailing newline
+        continue;
+      }
+
+      _newLine();
+      if (line.isNotEmpty) {
+        // Allow content to be indented relative to the parent key/list item
+        _indentLevel++;
+        _writeIndent();
+        _write(line);
+        _indentLevel--;
+      }
+    }
   }
 
   // ... helpers like _write, _writeLine, _isScalar, _needsQuoting ...

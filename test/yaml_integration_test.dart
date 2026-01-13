@@ -161,5 +161,30 @@ dev_dependencies:
 
       expect(formatYaml(input), expected);
     });
+    test('formats block scalars (LITERAL and FOLDED) correctly', () {
+      const input = '''
+name: Block Scalars
+description: >
+  This is a
+  folded scalar
+  that spans multiple lines.
+steps:
+  - run: |
+      echo "hello"
+      echo "world"
+''';
+
+      const expected = '''
+name: Block Scalars
+description: >
+  This is a folded scalar that spans multiple lines.
+steps:
+  - run: |
+      echo "hello"
+      echo "world"
+''';
+
+      expect(formatYaml(input), expected);
+    });
   });
 }

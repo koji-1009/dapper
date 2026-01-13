@@ -1,3 +1,13 @@
+## Next
+
+### Fixed
+
+* Fix path-based ignore patterns (e.g., `ios/Pods`, `sub/ignored`) not working in nested directories
+
+### Added
+
+* Add comprehensive CLI tests for ignore pattern handling
+
 ## 1.3.2
 
 ### Fixed

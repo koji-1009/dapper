@@ -192,11 +192,13 @@ class IgnoreRules {
   /// Checks if an entry should be ignored.
   ///
   /// [name] is the basename of the entry.
+  /// [relativePath] is the path relative to the root for path-based matching.
   /// [defaultIgnored] is a set of names that are always ignored.
   /// [isDirectory] indicates if the entry is a directory.
   bool shouldIgnore(
     String name,
     Set<String> defaultIgnored, {
+    String? relativePath,
     bool isDirectory = false,
   }) {
     // Negation patterns can override defaults
@@ -209,9 +211,12 @@ class IgnoreRules {
       return true;
     }
 
+    // Use relativePath for path-based patterns, otherwise use name
+    final pathToMatch = relativePath ?? name;
+
     // Check glob patterns
     for (final pattern in _patterns) {
-      if (pattern.matches(name, isDirectory: isDirectory)) {
+      if (pattern.matches(pathToMatch, isDirectory: isDirectory)) {
         return true;
       }
     }
@@ -526,6 +531,7 @@ class DapperCli {
     OutputMode outputMode,
     FormatOptions options, {
     IgnoreRules? parentRules,
+    String? relativeBasePath,
   }) {
     final dir = Directory(dirPath);
     var result = ProcessResult.unchanged;
@@ -541,17 +547,29 @@ class DapperCli {
         final name = _basename(entity.path);
         final isDirectory = entity is Directory;
 
+        // Build relative path for path-based pattern matching
+        final relativePath = relativeBasePath != null
+            ? '$relativeBasePath/$name'
+            : name;
+
         // Check if should be ignored
         if (rules.shouldIgnore(
           name,
           _ignoredDirectories,
+          relativePath: relativePath,
           isDirectory: isDirectory,
         )) {
           continue;
         }
 
         result = result.merge(
-          _processEntity(entity, outputMode, options, rules),
+          _processEntity(
+            entity,
+            outputMode,
+            options,
+            rules,
+            relativePath: relativePath,
+          ),
         );
       }
     } catch (e) {
@@ -566,14 +584,16 @@ class DapperCli {
     FileSystemEntity entity,
     OutputMode outputMode,
     FormatOptions options,
-    IgnoreRules rules,
-  ) {
+    IgnoreRules rules, {
+    required String relativePath,
+  }) {
     if (entity is Directory) {
       return _processDirectory(
         entity.path,
         outputMode,
         options,
         parentRules: rules,
+        relativeBasePath: relativePath,
       );
     }
     if (entity is File && _isFormattableFile(entity.path)) {

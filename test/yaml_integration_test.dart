@@ -186,5 +186,31 @@ steps:
 
       expect(formatYaml(input), expected);
     });
+
+    test('formats block scalars with chomping indicators', () {
+      const input = '''
+strip: |-
+  text without newline
+keep: |+
+  text with
+  extra newlines
+
+clip: |
+  standard text
+''';
+
+      const expected = '''
+strip: |-
+  text without newline
+keep: |+
+  text with
+  extra newlines
+
+clip: |
+  standard text
+''';
+
+      expect(formatYaml(input), expected);
+    });
   });
 }

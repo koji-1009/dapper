@@ -358,6 +358,9 @@ class DapperCli {
     '.fvm',
   };
 
+  /// Default ignore rules.
+  static final _defaultIgnoreRules = IgnoreRules.parse('*-lock.yaml');
+
   /// Runs the CLI with the given arguments.
   ///
   /// Returns the exit code.
@@ -540,6 +543,10 @@ class DapperCli {
     var rules = IgnoreRules.loadFromDirectory(dirPath);
     if (parentRules != null) {
       rules = parentRules.merge(rules);
+    } else {
+      // If no parent rules, this is a root directory scan.
+      // Merge with default rules.
+      rules = _defaultIgnoreRules.merge(rules);
     }
 
     try {

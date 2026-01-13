@@ -1,5 +1,9 @@
 ## Next
 
+### Changed
+
+* Ignored `*-lock.yaml` files by default to prevent formatting auto-generated files.
+
 ### Fixed
 
 * Fixed incorrect escaping of backslashes and quotes in double-quoted and single-quoted YAML strings.

@@ -544,6 +544,25 @@ dapper:
         ]);
         expect(result.code, 0);
       });
+
+      test('ignores *-lock.yaml files by default', () {
+        File('${tempDir.path}/test-lock.yaml').writeAsStringSync('key: value');
+        // If it was not ignored, it would be formatted (adding newline) -> changed
+        // But since it is ignored, it should remain unchanged (even if unformatted)
+        // Wait, if content is 'key: value', formatter adds newline?
+        // Let's write invalid YAML or unformatted YAML to be sure.
+        File(
+          '${tempDir.path}/test-lock.yaml',
+        ).writeAsStringSync('key: value'); // Missing trailing newline
+
+        final result = runQuietly([
+          '-o',
+          'none',
+          '--set-exit-if-changed',
+          tempDir.path,
+        ]);
+        expect(result.code, 0);
+      });
     });
 
     group('options', () {

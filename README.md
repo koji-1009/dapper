@@ -12,24 +12,24 @@ A simple Markdown and YAML formatter for Dart, inspired by Prettier.
 
 ### Markdown Formatting
 
-- **Emphasis normalization**: `*text*` → `_text_`
-- **List formatting**: Ordered/unordered lists with proper alignment
-- **Code block preservation**: Maintains code block content
-- **Table formatting**: Aligns columns and normalizes separators
-- **Prose wrapping**: Optional line wrapping at specified width
-- **Definition lists**: Term/definition formatting
-- **Front matter**: YAML front matter preserved unchanged
-- **Setext headings**: Converted to ATX style (`#`)
-- **Deep nesting**: Supports arbitrary nesting levels
+* **Emphasis normalization**: `*text*` → `_text_`
+* **List formatting**: Ordered/unordered lists with proper alignment
+* **Code block preservation**: Maintains code block content
+* **Table formatting**: Aligns columns and normalizes separators
+* **Prose wrapping**: Optional line wrapping at specified width
+* **Definition lists**: Term/definition formatting
+* **Front matter**: YAML front matter preserved unchanged
+* **Setext headings**: Converted to ATX style (`#`)
+* **Deep nesting**: Supports arbitrary nesting levels
 
 ### YAML Formatting
 
-- **Consistent indentation**: Normalizes to 2-space indent
-- **Map formatting**: Key-value pairs with proper spacing
-- **List formatting**: Block style with proper indentation
-- **Nested structures**: Deep map/list nesting
-- **String quoting**: Automatic quoting for special values
-- **Comment preservation**: Inline and block comments preserved
+* **Consistent indentation**: Normalizes to 2-space indent
+* **Map formatting**: Key-value pairs with proper spacing
+* **List formatting**: Block style with proper indentation
+* **Nested structures**: Deep map/list nesting
+* **String quoting**: Automatic quoting for special values
+* **Comment preservation**: Inline and block comments preserved
 
 ## Usage
 
@@ -159,10 +159,10 @@ Pods
 
 **Features:**
 
-- Glob patterns (`*.generated.md`, `docs/**/*.md`)
-- Negation patterns (`!build` to include a default-ignored directory)
-- Nested support (child directories inherit parent rules)
-- `.gitignore` integration (patterns from `.gitignore` are also applied)
+* Glob patterns (`*.generated.md`, `docs/**/*.md`)
+* Negation patterns (`!build` to include a default-ignored directory)
+* Nested support (child directories inherit parent rules)
+* `.gitignore` integration (patterns from `.gitignore` are also applied)
 
 ## Format Options
 

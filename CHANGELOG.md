@@ -2,7 +2,7 @@
 
 ### Changed
 
-- Change default Markdown unordered list style from `-` (dash) to `*` (asterisk) to match Prettier's default behavior.
+* Change default Markdown unordered list style from `-` (dash) to `*` (asterisk) to match Prettier's default behavior.
 
 ## 1.2.0
 

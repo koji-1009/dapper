@@ -7,6 +7,7 @@ import 'dart:io';
 
 import 'package:args/args.dart';
 import 'package:dapper/dapper.dart';
+import 'package:glob/glob.dart';
 import 'package:yaml/yaml.dart';
 
 /// CLI exit codes.
@@ -56,7 +57,6 @@ class DapperCli {
     '.idea',
     '.vscode',
     '.fvm',
-    'build',
   };
 
   /// Runs the CLI with the given arguments.
@@ -204,8 +204,9 @@ class DapperCli {
   ProcessResult _processPath(
     String path,
     OutputMode outputMode,
-    FormatOptions options,
-  ) {
+    FormatOptions options, {
+    IgnoreRules? parentRules,
+  }) {
     final entity = FileSystemEntity.typeSync(path);
 
     return switch (entity) {
@@ -214,6 +215,7 @@ class DapperCli {
         path,
         outputMode,
         options,
+        parentRules: parentRules,
       ),
       FileSystemEntityType.file => _processFile(path, outputMode, options),
       _ => ProcessResult.unchanged,
@@ -228,20 +230,28 @@ class DapperCli {
   ProcessResult _processDirectory(
     String dirPath,
     OutputMode outputMode,
-    FormatOptions options,
-  ) {
+    FormatOptions options, {
+    IgnoreRules? parentRules,
+  }) {
     final dir = Directory(dirPath);
     var result = ProcessResult.unchanged;
+
+    // Load ignore rules for this directory and merge with parent rules
+    var rules = IgnoreRules.loadFromDirectory(dirPath);
+    if (parentRules != null) {
+      rules = parentRules.merge(rules);
+    }
 
     try {
       for (final entity in dir.listSync(recursive: false)) {
         final name = _basename(entity.path);
 
-        if (_ignoredDirectories.contains(name)) {
+        // Check if should be ignored using combined rules
+        if (rules.shouldIgnore(name, _ignoredDirectories)) {
           continue;
         }
 
-        final subResult = _processEntity(entity, outputMode, options);
+        final subResult = _processEntity(entity, outputMode, options, rules);
         result = _mergeResults(result, subResult);
       }
     } catch (e) {
@@ -256,9 +266,15 @@ class DapperCli {
     FileSystemEntity entity,
     OutputMode outputMode,
     FormatOptions options,
+    IgnoreRules rules,
   ) {
     if (entity is Directory) {
-      return _processDirectory(entity.path, outputMode, options);
+      return _processDirectory(
+        entity.path,
+        outputMode,
+        options,
+        parentRules: rules,
+      );
     }
     if (entity is File && _isFormattableFile(entity.path)) {
       return _processFile(entity.path, outputMode, options);
@@ -455,4 +471,99 @@ class DapperCli {
 /// Extracts the basename from a file path.
 String _basename(String path) {
   return Uri.file(path).pathSegments.lastWhere((s) => s.isNotEmpty);
+}
+
+/// Rules for ignoring files and directories.
+///
+/// Supports glob patterns and negation patterns (prefixed with `!`).
+class IgnoreRules {
+  final List<Glob> _patterns;
+  final Set<String> _negations;
+
+  IgnoreRules._(this._patterns, this._negations);
+
+  /// Creates empty rules.
+  factory IgnoreRules.empty() => IgnoreRules._([], {});
+
+  /// Parses ignore rules from file content.
+  factory IgnoreRules.parse(String content) {
+    final patterns = <Glob>[];
+    final negations = <String>{};
+
+    for (final line in content.split('\n')) {
+      final trimmed = line.trim();
+      if (trimmed.isEmpty || trimmed.startsWith('#')) {
+        continue;
+      }
+
+      if (trimmed.startsWith('!')) {
+        negations.add(trimmed.substring(1));
+      } else {
+        patterns.add(Glob(trimmed));
+      }
+    }
+
+    return IgnoreRules._(patterns, negations);
+  }
+
+  /// Loads rules from a file, returns null if file doesn't exist.
+  static IgnoreRules? loadFromFile(String filePath) {
+    final file = File(filePath);
+    if (!file.existsSync()) {
+      return null;
+    }
+    return IgnoreRules.parse(file.readAsStringSync());
+  }
+
+  /// Loads combined rules from .gitignore and .dapperignore in a directory.
+  static IgnoreRules loadFromDirectory(String directoryPath) {
+    var rules = IgnoreRules.empty();
+
+    // Load .gitignore first (lower priority)
+    final gitignore = loadFromFile('$directoryPath/.gitignore');
+    if (gitignore != null) {
+      rules = rules.merge(gitignore);
+    }
+
+    // Load .dapperignore second (higher priority)
+    final dapperignore = loadFromFile('$directoryPath/.dapperignore');
+    if (dapperignore != null) {
+      rules = rules.merge(dapperignore);
+    }
+
+    return rules;
+  }
+
+  /// Whether this rules set is empty.
+  bool get isEmpty => _patterns.isEmpty && _negations.isEmpty;
+
+  /// Checks if a name should be ignored.
+  bool shouldIgnore(String name, Set<String> defaultIgnored) {
+    // Negation patterns can override defaults
+    if (_negations.contains(name)) {
+      return false;
+    }
+
+    // Check default ignored list
+    if (defaultIgnored.contains(name)) {
+      return true;
+    }
+
+    // Check glob patterns
+    for (final pattern in _patterns) {
+      if (pattern.matches(name)) {
+        return true;
+      }
+    }
+
+    return false;
+  }
+
+  /// Merges this rules with another, creating combined rules.
+  IgnoreRules merge(IgnoreRules other) {
+    return IgnoreRules._(
+      [..._patterns, ...other._patterns],
+      {..._negations, ...other._negations},
+    );
+  }
 }

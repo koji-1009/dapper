@@ -135,6 +135,35 @@ dapper:
   run: dart run dapper -o none --set-exit-if-changed .
 ```
 
+## Ignoring Files
+
+Dapper respects `.gitignore` and `.dapperignore` files to exclude files and directories from formatting.
+
+### Default Ignored Directories
+
+These directories are always skipped (unless overridden with `!`):
+`.git`, `.dart_tool`, `.idea`, `.vscode`, `.fvm`
+
+### .dapperignore
+
+Create a `.dapperignore` file in your project root:
+
+```
+# Dependencies
+node_modules
+Pods
+
+# Generated files
+*.generated.md
+```
+
+**Features:**
+
+- Glob patterns (`*.generated.md`, `docs/**/*.md`)
+- Negation patterns (`!build` to include a default-ignored directory)
+- Nested support (child directories inherit parent rules)
+- `.gitignore` integration (patterns from `.gitignore` are also applied)
+
 ## Format Options
 
 | Option        | Type   | Default    | Markdown | YAML |

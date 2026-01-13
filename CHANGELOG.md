@@ -1,3 +1,12 @@
+## Next
+
+### Added
+
+- Add `.dapperignore` and `.gitignore` support for excluding files and directories
+  - Glob pattern matching (e.g., `*.generated.md`)
+  - Negation patterns to override defaults (e.g., `!build`)
+  - Nested ignore file support (child directories inherit parent rules)
+
 ## 1.1.1
 
 ### Fixed

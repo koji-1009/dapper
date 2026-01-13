@@ -1,3 +1,9 @@
+## 1.3.1
+
+### Changed
+
+* Change default Markdown unordered list style in the CLI from `-` (dash) to `*` (asterisk).
+
 ## 1.3.0
 
 ### Changed

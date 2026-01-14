@@ -4,6 +4,10 @@
 
 * Internal: Remove dead code in Markdown printer related to checkbox list items.
 
+### Added
+
+* Add `AGENTS.md` for AI agent design guidelines.
+
 ## 1.3.7
 
 ### Fixed

@@ -7,3 +7,6 @@ test/
 
 # Test coverage reports
 coverage/
+
+# AI agent design guidelines
+AGENTS.md

@@ -1,6 +1,12 @@
 ## Next
 
-### 1.3.7
+### Changed
+
+* Internal: Remove dead code in Markdown printer related to checkbox list items.
+
+## 1.3.7
+
+### Fixed
 
 * Fix unnecessary newline insertion after list items containing code blocks.
 * Fix data loss when formatting checkbox list items with block content (e.g., code blocks).

@@ -250,11 +250,7 @@ class MarkdownPrinter {
     } else {
       // If we have a checkbox but no text usually `[ ]` is followed by something.
       // But if it's just `[ ]` followed by a block, we write the prefix.
-      if (prefix.isNotEmpty) {
-        _writeLine(prefix.trimRight());
-      } else {
-        _newLine();
-      }
+      _newLine();
     }
 
     _needsBlankLine = false;

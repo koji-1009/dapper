@@ -1,3 +1,12 @@
+## Next
+
+### Fixed
+
+* Fix unnecessary newline insertion after list items containing code blocks.
+* Fix data loss when formatting checkbox list items with block content (e.g., code blocks).
+* Fix data loss and incorrect structure when formatting nested blockquotes.
+* Fix whitespace handling in paragraphs to ensure proper trimming, especially within blockquotes.
+
 ## 1.3.6
 
 ### Changed

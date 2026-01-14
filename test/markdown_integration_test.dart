@@ -103,5 +103,83 @@ Term
       final formatter = MarkdownFormatter();
       expect(formatter.format(input), expected);
     });
+    test(
+      'does not add extra newline after list item containing code block',
+      () {
+        const input = '''
+* A
+  ```
+  abc
+  ```
+* B
+  ```
+  abc
+  ```
+''';
+
+        const expected = '''
+* A
+  ```
+  abc
+  ```
+* B
+  ```
+  abc
+  ```
+''';
+
+        final formatter = MarkdownFormatter();
+        expect(formatter.format(input), expected);
+      },
+    );
+    test('formats checkbox list item with code block correctly', () {
+      const input = '''
+- [ ] Task 1
+  ```
+  code inside
+  ```
+''';
+
+      const expected = '''
+* [ ] Task 1
+  ```
+  code inside
+  ```
+''';
+
+      final formatter = MarkdownFormatter();
+      expect(formatter.format(input), expected);
+    });
+
+    test('formats blockquote with list correctly', () {
+      const input = '''
+> * Item 1
+> * Item 2
+''';
+
+      const expected = '''
+> * Item 1
+> * Item 2
+''';
+
+      final formatter = MarkdownFormatter();
+      expect(formatter.format(input), expected);
+    });
+
+    test('formats nested blockquote correctly', () {
+      const input = '''
+> Level 1
+>> Level 2
+''';
+
+      const expected = '''
+> Level 1
+>
+> > Level 2
+''';
+
+      final formatter = MarkdownFormatter();
+      expect(formatter.format(input), expected);
+    });
   });
 }

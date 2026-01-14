@@ -3,6 +3,8 @@
 ### Changed
 
 * Internal: Remove dead code in Markdown printer related to checkbox list items.
+* Internal: Remove duplicate `_ensureTrailingNewline` in YAML formatter, reuse `text_utils.dart`.
+* Internal: Clean up development notes and verbose comments in code.
 
 ### Added
 

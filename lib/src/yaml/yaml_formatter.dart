@@ -5,6 +5,7 @@ library;
 import 'package:yaml/yaml.dart';
 
 import '../options.dart';
+import '../utils/text_utils.dart';
 
 /// Formats a YAML document according to the specified options.
 ///
@@ -81,7 +82,7 @@ class _YamlPrinter {
       _printGap(_lastOffset, source.length);
     }
 
-    return _ensureTrailingNewline(_buffer.toString());
+    return ensureTrailingNewline(_buffer.toString());
   }
 
   void _printGap(
@@ -192,21 +193,12 @@ class _YamlPrinter {
       ); // Get the key node to access span
       final valueNode = map.nodes[key]!;
 
-      // Gap before key
-      // TRIM FIX: Trim leading newlines for the first key to enforce tight padding after parent
+      // Handle comments between keys, trimming leading newlines for the first key
       _printGap(
         _lastOffset,
         (keyNode as YamlNode).span.start.offset,
         trimLeadingNewlines: i == 0,
       );
-
-      // If gap put us on a new line, we need indent.
-      // But _printGap handles writing.
-      // We need to ensure we are on a fresh line if not inline?
-      // Actually _printGap logic needs to be smarter about indents.
-
-      // Simplified approach: _printGap outputs comments.
-      // We then decide if we need a newline/indent for the key.
 
       if (i > 0 || !inline) {
         if (!inline && _buffer.isEmpty) {
@@ -226,16 +218,12 @@ class _YamlPrinter {
         }
       }
 
-      final keyText = keyNode.toString(); // or keyNode.value.toString()
+      final keyText = keyNode.toString();
       _write('$keyText:');
 
       _lastOffset = keyNode.span.end.offset;
 
-      // Gap between key and value (inline comments?)
-      // If value is simple, comments stay on same level.
-      // If value is complex (block), comments usually belong to the child block?
-      // Or they are just comments on the key.
-      // But visually, if they are on the next line, they should be indented if the value is indented.
+      // Determine indent level for comments between key and value
       final isScalarOrEmpty =
           _isScalar(valueNode) ||
           (valueNode is YamlMap && valueNode.isEmpty) ||
@@ -316,17 +304,12 @@ class _YamlPrinter {
         _printNode(node, inline: true);
         _lastOffset = node.span.end.offset;
       } else if (node is YamlMap) {
-        // Special handling for map inside list
+        // Map inside list: first key on same line as `-`
         if (node.isEmpty) {
           _writeLine('{}');
           _lastOffset = node.span.end.offset;
         } else {
-          // We need to print the first entry on the same line
-          // But _printMap logic handles "inline".
-          // However, _printMap expects to handle keys.
-
-          // Delegate to _printMap with inline=true for the first key
-          // INDENTATION FIX: Increment indent level so subsequent keys align with the first key content
+          // Print first entry inline, increment indent for subsequent keys
           _indentLevel++;
           _printMap(node, inline: true);
           _indentLevel--;
@@ -355,7 +338,6 @@ class _YamlPrinter {
 
   void _printScalar(YamlNode node) {
     final scalar = node as YamlScalar;
-    // Determine quoting...
     final value = scalar.value;
 
     // Only quote strings. Primitives (null, bool, num) should differ to their string representation
@@ -431,8 +413,6 @@ class _YamlPrinter {
     }
   }
 
-  // ... helpers like _write, _writeLine, _isScalar, _needsQuoting ...
-
   bool _isScalar(YamlNode node) {
     return node is YamlScalar;
   }
@@ -497,10 +477,5 @@ class _YamlPrinter {
 
   void _writeIndent() {
     _buffer.write(' ' * (_indentLevel * options.tabWidth));
-  }
-
-  String _ensureTrailingNewline(String text) {
-    final trimmed = text.trimRight();
-    return trimmed.isEmpty ? '' : '$trimmed\n';
   }
 }

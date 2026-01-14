@@ -1,6 +1,6 @@
 ## Next
 
-### Fixed
+### 1.3.7
 
 * Fix unnecessary newline insertion after list items containing code blocks.
 * Fix data loss when formatting checkbox list items with block content (e.g., code blocks).

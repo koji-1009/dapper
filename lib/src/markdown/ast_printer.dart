@@ -121,7 +121,7 @@ class MarkdownPrinter {
         _writeLine(line);
       }
     } else {
-      _writeLine(content);
+      _writeLine(content.trim());
     }
 
     _needsBlankLine = true;
@@ -188,7 +188,7 @@ class MarkdownPrinter {
   }
 
   void _printListItemContent(md.Element element) {
-    final children = element.children ?? <md.Node>[];
+    var children = element.children ?? <md.Node>[];
 
     // Check if it's a checkbox item (has input element as first child)
     final hasCheckbox =
@@ -196,49 +196,33 @@ class MarkdownPrinter {
         children.first is md.Element &&
         (children.first as md.Element).tag == 'input';
 
+    String prefix = '';
     if (hasCheckbox) {
       final inputElement = children.first as md.Element;
       final isChecked = inputElement.attributes['checked'] == 'true';
-      final checkbox = isChecked ? '[x] ' : '[ ] ';
-
-      // Get remaining content after the checkbox
-      final remainingChildren = children.skip(1).toList();
-      final content = remainingChildren.map((n) => _renderInlineNode(n)).join();
-
-      if (options.proseWrap == ProseWrap.always) {
-        final lines = wrapText(
-          normalizeWhitespace(content),
-          options.printWidth - _currentIndent - 4,
-        );
-        _write('$checkbox${lines.first}');
-        _newLine();
-        for (var i = 1; i < lines.length; i++) {
-          _writeIndent();
-          _write('    ${lines[i]}');
-          _newLine();
-        }
-      } else {
-        _writeLine('$checkbox${content.trim()}');
-      }
-      return;
+      prefix = isChecked ? '[x] ' : '[ ] ';
+      children = children.skip(1).toList();
     }
 
     // Simple case: inline content only
     if (children.every(_isInline)) {
-      final content = _renderInlineContent(element);
+      final content = children.map(_renderInlineNode).join();
       if (options.proseWrap == ProseWrap.always) {
         final lines = wrapText(
           normalizeWhitespace(content),
-          options.printWidth - _currentIndent,
+          options.printWidth - _currentIndent - prefix.length,
         );
-        _write(lines.first);
+        _write('$prefix${lines.first}');
         _newLine();
         for (var i = 1; i < lines.length; i++) {
           _writeIndent();
+          if (prefix.isNotEmpty) {
+            _write('    '); // Indent for checkbox
+          }
           _writeLine(lines[i]);
         }
       } else {
-        _writeLine(content.trim());
+        _writeLine('$prefix${content.trim()}');
       }
       return;
     }
@@ -246,6 +230,7 @@ class MarkdownPrinter {
     // Complex case: contains block elements (e.g., nested lists)
     // First, collect leading inline content
     final inlineContent = StringBuffer();
+    inlineContent.write(prefix);
     var blockStartIndex = 0;
 
     for (var i = 0; i < children.length; i++) {
@@ -263,8 +248,16 @@ class MarkdownPrinter {
     if (inlineText.isNotEmpty) {
       _writeLine(inlineText);
     } else {
-      _newLine();
+      // If we have a checkbox but no text usually `[ ]` is followed by something.
+      // But if it's just `[ ]` followed by a block, we write the prefix.
+      if (prefix.isNotEmpty) {
+        _writeLine(prefix.trimRight());
+      } else {
+        _newLine();
+      }
     }
+
+    _needsBlankLine = false;
 
     // Then process block elements
     for (var i = blockStartIndex; i < children.length; i++) {
@@ -278,29 +271,22 @@ class MarkdownPrinter {
   void _printBlockquote(md.Element element) {
     _ensureBlankLine();
 
-    final savedIndent = _currentIndent;
-    _currentIndent = 0;
+    // Use a sub-printer to format the content of the blockquote
+    // Reduce printWidth by 2 to account for "> " prefix
+    final subOptions = options.copyWith(printWidth: options.printWidth - 2);
+    final subPrinter = MarkdownPrinter(subOptions);
 
-    // Render blockquote content
-    final content = StringBuffer();
-    for (final child in element.children ?? <md.Node>[]) {
-      if (child is md.Element && child.tag == 'p') {
-        content.write(_renderInlineContent(child));
-      }
-    }
+    final formattedContent = subPrinter.print(element.children ?? []);
 
-    final lines = options.proseWrap == ProseWrap.always
-        ? wrapText(
-            normalizeWhitespace(content.toString()),
-            options.printWidth - savedIndent - 2,
-          )
-        : [content.toString().trim()];
-
-    _currentIndent = savedIndent;
-
+    // Split lines and apply '>' prefix
+    final lines = formattedContent.trimRight().split('\n');
     for (final line in lines) {
       _writeIndent();
-      _writeLine('> $line');
+      if (line.isEmpty) {
+        _writeLine('>');
+      } else {
+        _writeLine('> $line');
+      }
     }
 
     _needsBlankLine = true;

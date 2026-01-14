@@ -5,9 +5,13 @@
 * Internal: Remove dead code in Markdown printer related to checkbox list items.
 * Internal: Remove duplicate `_ensureTrailingNewline` in YAML formatter, reuse `text_utils.dart`.
 * Internal: Clean up development notes and verbose comments in code.
+* Internal: Move CLI modules from `bin/src/` to `lib/bin/` for coverage and reusability.
+* Internal: Split `test/cli_test.dart` into `test/bin/` for better organization.
 
 ### Added
 
+* Add `FileSystem` abstraction in `lib/bin/` for testability (100% coverage).
+* Add `lib/bin.dart` exporting CLI utilities (`DapperCli`, `ConfigLoader`, `IgnoreRules`).
 * Add `AGENTS.md` for AI agent design guidelines.
 
 ## 1.3.7

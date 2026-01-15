@@ -15,48 +15,51 @@ Key design principles:
 
 ```
 dapper/
-├── bin/dapper.dart     # CLI (dart:io dependent)
-├── lib/                # Core library (platform-independent)
-│   ├── dapper.dart     # Public API exports
-│   └── src/
-│       ├── markdown/   # Markdown formatter
-│       │   ├── ast_printer.dart      # AST → Markdown string
-│       │   ├── markdown_formatter.dart # Entry point
-│       │   ├── normalizer.dart       # Prettier-style normalization
-│       │   ├── definition_list.dart  # Definition list support
-│       │   └── front_matter.dart     # YAML front matter extraction
-│       ├── yaml/       # YAML formatter
-│       │   └── yaml_formatter.dart   # Full YAML formatting
-│       ├── utils/      # Shared utilities
-│       │   └── text_utils.dart       # Text wrapping, normalization
-│       └── options.dart              # FormatOptions class
+├── bin/dapper.dart     # CLI entry point (imports lib/bin.dart)
+├── lib/
+│   ├── dapper.dart     # Public API (platform-independent, web-safe)
+│   ├── bin.dart        # CLI utilities (dart:io dependent, NOT web-safe)
+│   ├── src/            # Core formatter logic (platform-independent)
+│   │   ├── markdown/
+│   │   ├── yaml/
+│   │   ├── utils/
+│   │   └── options.dart
+│   └── bin/            # CLI implementation (dart:io dependent)
+│       ├── config_loader.dart
+│       ├── dapper_cli.dart
+│       ├── exit_code.dart
+│       ├── ignore_rules.dart
+│       ├── output_mode.dart
+│       └── process_result.dart
 ├── test/               # Tests (mirrors lib/ structure)
-└── docs/               # Web demo (compiles lib/ to JavaScript)
+│   ├── src/            # Tests for lib/src/
+│   └── bin/            # Tests for lib/bin/
+└── docs/               # Web demo (compiles lib/dapper.dart to JavaScript)
 ```
 
 ## Design Constraints
 
-### lib/ Must Be Platform-Independent
+### lib/dapper.dart Must Be Platform-Independent
 
-Code under `lib/` **must not use dart:io**.
+`package:dapper/dapper.dart` **must not use dart:io**.
 
 Reasons:
 
-* The web demo in `docs/` compiles `lib/` to JavaScript
+* The web demo in `docs/` compiles this to JavaScript
 * dart:io is not available in browser environments
 * Future cross-platform distribution (npm, etc.) is considered
 
-### bin/dapper.dart Responsibilities
+### lib/bin.dart Contains dart:io Dependent Code
 
-The following are intentionally placed in `bin/dapper.dart`:
+`package:dapper/bin.dart` **depends on dart:io** and can only be used in Dart VM environments.
 
-| Class/Logic                     | Reason                            |
-| ------------------------------- | --------------------------------- |
-| `IgnorePattern` / `IgnoreRules` | Filesystem traversal              |
-| `ConfigLoader`                  | File reading (dart:io)            |
-| `DapperCli`                     | stdin/stdout operations (dart:io) |
+| Class/Logic                     | Location   | Reason                            |
+| ------------------------------- | ---------- | --------------------------------- |
+| `IgnorePattern` / `IgnoreRules` | `lib/bin/` | Filesystem traversal              |
+| `ConfigLoader`                  | `lib/bin/` | File reading (dart:io)            |
+| `DapperCli`                     | `lib/bin/` | stdin/stdout operations (dart:io) |
 
-Moving these to `lib/` is **not recommended**.
+> **WARNING**: Do not import `package:dapper/bin.dart` in web environments.
 
 ## Intentionally Unsupported Features
 
@@ -79,7 +82,7 @@ When users request these features, explain the design decision.
 ### Refactoring Rules
 
 * Code splitting within `lib/src/` is allowed
-* When moving code from `bin/` to `lib/`, verify no dart:io dependencies
+* dart:io dependent code goes in `lib/bin/`
 * Use shared utilities from `text_utils.dart` to avoid duplication
 
 ### Common Commands

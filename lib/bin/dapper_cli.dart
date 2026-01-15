@@ -3,8 +3,10 @@ import 'dart:io' as io show FileSystemEntityType;
 import 'dart:io' hide File, Directory, FileSystemEntity, FileSystemEntityType;
 
 import 'package:args/args.dart';
-import 'package:dapper/dapper.dart';
 
+import '../src/markdown/markdown_formatter.dart';
+import '../src/options.dart';
+import '../src/yaml/yaml_formatter.dart';
 import 'config_loader.dart';
 import 'exit_code.dart';
 import 'file_system.dart';

@@ -7,7 +7,7 @@ import 'package:test/test.dart';
 void main() {
   group('extractFrontMatter', () {
     test('extracts valid front matter', () {
-      final input = '''---
+      const input = '''---
 title: My Document
 author: John
 ---
@@ -20,7 +20,7 @@ author: John
     });
 
     test('handles no front matter', () {
-      final input = '# Just content';
+      const input = '# Just content';
       final result = extractFrontMatter(input);
       expect(result.hasFrontMatter, isFalse);
       expect(result.frontMatter, isNull);
@@ -34,7 +34,7 @@ author: John
     });
 
     test('handles unclosed front matter', () {
-      final input = '''---
+      const input = '''---
 title: Incomplete
 # Content''';
       final result = extractFrontMatter(input);
@@ -43,7 +43,7 @@ title: Incomplete
     });
 
     test('handles front matter not at beginning', () {
-      final input = '''Some text
+      const input = '''Some text
 ---
 title: Not front matter
 ---''';
@@ -73,7 +73,7 @@ title: Not front matter
 
   group('extractFrontMatter edge cases', () {
     test('handles front matter with blank line after closing delimiter', () {
-      final input = '''---
+      const input = '''---
 title: Test
 ---
 
@@ -84,7 +84,7 @@ title: Test
     });
 
     test('handles front matter without blank line after closing delimiter', () {
-      final input = '''---
+      const input = '''---
 title: Test
 ---
 # Content''';

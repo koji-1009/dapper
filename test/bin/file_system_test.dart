@@ -70,11 +70,11 @@ void main() {
 
   group('FileEntry', () {
     test('stores path and isDirectory', () {
-      final entry = FileEntry('/path/to/file', isDirectory: false);
+      const entry = FileEntry('/path/to/file', isDirectory: false);
       expect(entry.path, '/path/to/file');
       expect(entry.isDirectory, isFalse);
 
-      final dirEntry = FileEntry('/path/to/dir', isDirectory: true);
+      const dirEntry = FileEntry('/path/to/dir', isDirectory: true);
       expect(dirEntry.isDirectory, isTrue);
     });
   });

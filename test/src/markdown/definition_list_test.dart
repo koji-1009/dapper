@@ -22,7 +22,7 @@ void main() {
 
   group('parseDocumentSegments', () {
     test('parses single definition list', () {
-      final input = '''Term 1
+      const input = '''Term 1
 : Definition 1''';
       final segments = parseDocumentSegments(input);
       expect(segments.length, 1);
@@ -34,7 +34,7 @@ void main() {
     });
 
     test('parses multiple definitions per term', () {
-      final input = '''Term
+      const input = '''Term
 : Def 1
 : Def 2
 : Def 3''';
@@ -45,7 +45,7 @@ void main() {
     });
 
     test('parses mixed content', () {
-      final input = '''# Heading
+      const input = '''# Heading
 
 Term
 : Definition
@@ -59,7 +59,7 @@ Regular paragraph''';
     });
 
     test('handles content without definition lists', () {
-      final input = '''# Heading
+      const input = '''# Heading
 
 Regular paragraph''';
       final segments = parseDocumentSegments(input);
@@ -70,7 +70,7 @@ Regular paragraph''';
 
   group('formatDefinitionList', () {
     test('formats single item', () {
-      final list = DefinitionList([
+      const list = DefinitionList([
         DefinitionItem('Term', ['Definition']),
       ]);
       final result = formatDefinitionList(list);
@@ -79,7 +79,7 @@ Regular paragraph''';
     });
 
     test('formats multiple items', () {
-      final list = DefinitionList([
+      const list = DefinitionList([
         DefinitionItem('Term 1', ['Def 1']),
         DefinitionItem('Term 2', ['Def 2a', 'Def 2b']),
       ]);
@@ -94,7 +94,7 @@ Regular paragraph''';
 
   group('parseDocumentSegments edge cases', () {
     test('handles definition with blank line between definitions', () {
-      final input = '''Term
+      const input = '''Term
 : Def 1
 
 : Def 2''';
@@ -103,7 +103,7 @@ Regular paragraph''';
     });
 
     test('handles consecutive definition lists', () {
-      final input = '''Term1
+      const input = '''Term1
 : Def1
 
 Term2

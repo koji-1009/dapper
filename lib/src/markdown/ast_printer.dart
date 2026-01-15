@@ -11,13 +11,12 @@ import 'normalizer.dart';
 
 /// Prints a markdown AST node to formatted string.
 class MarkdownPrinter {
+  MarkdownPrinter(this.options);
   final FormatOptions options;
   final StringBuffer _buffer = StringBuffer();
   int _currentIndent = 0;
   bool _needsBlankLine = false;
   int _listDepth = 0;
-
-  MarkdownPrinter(this.options);
 
   /// Prints the given nodes and returns the formatted string.
   String print(List<md.Node> nodes) {

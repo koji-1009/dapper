@@ -64,6 +64,20 @@ enum UnorderedListStyle {
 /// Use these options to customize how Markdown and YAML files are formatted.
 /// All options have sensible defaults matching Prettier's behavior.
 class FormatOptions {
+  /// Creates formatting options with the specified values.
+  ///
+  /// All parameters are optional and have sensible defaults:
+  /// - [printWidth]: 80
+  /// - [tabWidth]: 2
+  /// - [proseWrap]: [ProseWrap.preserve]
+  /// - [ulStyle]: [UnorderedListStyle.asterisk]
+  const FormatOptions({
+    this.printWidth = 80,
+    this.tabWidth = 2,
+    this.proseWrap = ProseWrap.preserve,
+    this.ulStyle = UnorderedListStyle.asterisk,
+  });
+
   /// Maximum line width for wrapping.
   ///
   /// **Applies to:** Markdown only
@@ -96,20 +110,6 @@ class FormatOptions {
   ///
   /// Default is [UnorderedListStyle.asterisk].
   final UnorderedListStyle ulStyle;
-
-  /// Creates formatting options with the specified values.
-  ///
-  /// All parameters are optional and have sensible defaults:
-  /// - [printWidth]: 80
-  /// - [tabWidth]: 2
-  /// - [proseWrap]: [ProseWrap.preserve]
-  /// - [ulStyle]: [UnorderedListStyle.asterisk]
-  const FormatOptions({
-    this.printWidth = 80,
-    this.tabWidth = 2,
-    this.proseWrap = ProseWrap.preserve,
-    this.ulStyle = UnorderedListStyle.asterisk,
-  });
 
   /// Default formatting options matching Prettier defaults.
   static const FormatOptions defaults = FormatOptions();

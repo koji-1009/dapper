@@ -1,7 +1,8 @@
 import 'dart:io';
 
-import 'package:dapper/dapper.dart';
 import 'package:yaml/yaml.dart';
+
+import '../src/options.dart';
 
 /// Loads format options from configuration files.
 class ConfigLoader {

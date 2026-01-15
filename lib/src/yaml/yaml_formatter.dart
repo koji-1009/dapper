@@ -28,12 +28,12 @@ import '../utils/text_utils.dart';
 /// //     sdk: flutter
 /// ```
 class YamlFormatter {
+  /// Creates a new YAML formatter with the given options.
+  const YamlFormatter([FormatOptions? options])
+    : options = options ?? FormatOptions.defaults;
+
   /// The options used for formatting.
   final FormatOptions options;
-
-  /// Creates a new YAML formatter with the given options.
-  YamlFormatter([FormatOptions? options])
-    : options = options ?? FormatOptions.defaults;
 
   /// Formats the given YAML string.
   ///
@@ -57,13 +57,12 @@ String formatYaml(String yaml, {FormatOptions? options}) {
 }
 
 class _YamlPrinter {
+  _YamlPrinter(this.options, this.source);
   final FormatOptions options;
   final String source;
   final StringBuffer _buffer = StringBuffer();
   int _indentLevel = 0;
   int _lastOffset = 0;
-
-  _YamlPrinter(this.options, this.source);
 
   String print(YamlNode node) {
     _buffer.clear();
@@ -101,7 +100,7 @@ class _YamlPrinter {
     var trimming = trimLeadingNewlines;
 
     for (var i = 0; i < lines.length; i++) {
-      var line = lines[i];
+      final line = lines[i];
 
       if (trimming) {
         if (line.trim().isEmpty) continue;
@@ -352,7 +351,7 @@ class _YamlPrinter {
       text = "'${value.toString().replaceAll("'", "''")}'";
     } else if (scalar.style == ScalarStyle.DOUBLE_QUOTED) {
       // Escape backslashes and double quotes
-      var encoded = value
+      final encoded = value
           .toString()
           .replaceAll(r'\', r'\\')
           .replaceAll('"', r'\"')

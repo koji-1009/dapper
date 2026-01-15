@@ -67,7 +67,7 @@ Term
 
 ''';
 
-      final formatter = MarkdownFormatter();
+      const formatter = MarkdownFormatter();
       expect(formatter.format(input), expected);
     });
 
@@ -100,7 +100,7 @@ Term
 > Blockquote with spaces
 ''';
 
-      final formatter = MarkdownFormatter();
+      const formatter = MarkdownFormatter();
       expect(formatter.format(input), expected);
     });
     test(
@@ -128,7 +128,7 @@ Term
   ```
 ''';
 
-        final formatter = MarkdownFormatter();
+        const formatter = MarkdownFormatter();
         expect(formatter.format(input), expected);
       },
     );
@@ -147,7 +147,7 @@ Term
   ```
 ''';
 
-      final formatter = MarkdownFormatter();
+      const formatter = MarkdownFormatter();
       expect(formatter.format(input), expected);
     });
 
@@ -162,7 +162,7 @@ Term
 > * Item 2
 ''';
 
-      final formatter = MarkdownFormatter();
+      const formatter = MarkdownFormatter();
       expect(formatter.format(input), expected);
     });
 
@@ -178,7 +178,7 @@ Term
 > > Level 2
 ''';
 
-      final formatter = MarkdownFormatter();
+      const formatter = MarkdownFormatter();
       expect(formatter.format(input), expected);
     });
   });

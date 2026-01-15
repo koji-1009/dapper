@@ -9,6 +9,12 @@ import 'package:glob/glob.dart';
 /// - Path-based patterns (containing `/`)
 /// - Simple name patterns
 class IgnorePattern {
+  const IgnorePattern._(
+    this._glob,
+    this.hasPathSeparator,
+    this.isDirectoryOnly,
+  );
+
   /// The glob pattern for matching.
   final Glob _glob;
 
@@ -17,8 +23,6 @@ class IgnorePattern {
 
   /// Whether this pattern is for directories only (originally ended with `/`).
   final bool isDirectoryOnly;
-
-  IgnorePattern._(this._glob, this.hasPathSeparator, this.isDirectoryOnly);
 
   /// Parses a gitignore-style pattern.
   ///
@@ -71,9 +75,6 @@ class IgnorePattern {
 ///
 /// Supports glob patterns and negation patterns (prefixed with `!`).
 class IgnoreRules {
-  final List<IgnorePattern> _patterns;
-  final Set<String> _negations;
-
   IgnoreRules._(this._patterns, this._negations);
 
   /// Creates empty rules.
@@ -102,6 +103,8 @@ class IgnoreRules {
 
     return IgnoreRules._(patterns, negations);
   }
+  final List<IgnorePattern> _patterns;
+  final Set<String> _negations;
 
   /// Loads rules from a file, returns `null` if file doesn't exist.
   static IgnoreRules? loadFromFile(String filePath) {

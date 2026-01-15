@@ -17,33 +17,33 @@ final _orderedListPattern = RegExp(r'^\d+\.');
 
 /// Represents a definition list.
 class DefinitionList {
+  const DefinitionList(this.items);
   final List<DefinitionItem> items;
-
-  DefinitionList(this.items);
 }
 
 /// Represents a single term with its definitions.
 class DefinitionItem {
+  const DefinitionItem(this.term, this.definitions);
   final String term;
   final List<String> definitions;
-
-  DefinitionItem(this.term, this.definitions);
 }
 
 /// Represents a segment of the document that is either regular markdown
 /// or a definition list.
-sealed class DocumentSegment {}
+sealed class DocumentSegment {
+  const DocumentSegment();
+}
 
 /// A segment containing regular markdown content.
 class MarkdownSegment extends DocumentSegment {
+  const MarkdownSegment(this.content);
   final String content;
-  MarkdownSegment(this.content);
 }
 
 /// A segment containing a definition list.
 class DefinitionListSegment extends DocumentSegment {
+  const DefinitionListSegment(this.definitionList);
   final DefinitionList definitionList;
-  DefinitionListSegment(this.definitionList);
 }
 
 /// Parses markdown into segments, extracting definition lists.

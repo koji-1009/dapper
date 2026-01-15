@@ -348,7 +348,7 @@ class _NullStdout implements Stdout {
   void writeln([Object? object = '']) {}
 
   @override
-  void writeAll(Iterable objects, [String separator = '']) {}
+  void writeAll(Iterable<dynamic> objects, [String separator = '']) {}
 
   @override
   void add(List<int> data) {}
@@ -360,16 +360,16 @@ class _NullStdout implements Stdout {
   void addError(Object error, [StackTrace? stackTrace]) {}
 
   @override
-  Future addStream(Stream<List<int>> stream) => Future.value();
+  Future<dynamic> addStream(Stream<List<int>> stream) => Future.value();
 
   @override
-  Future flush() => Future.value();
+  Future<dynamic> flush() => Future.value();
 
   @override
-  Future close() => Future.value();
+  Future<dynamic> close() => Future.value();
 
   @override
-  Future get done => Future.value();
+  Future<dynamic> get done => Future.value();
 
   @override
   Encoding get encoding => utf8;
@@ -401,11 +401,10 @@ class _NullStdout implements Stdout {
 
 /// Mock file system for testing error cases.
 class _MockFileSystem implements FileSystem {
+  _MockFileSystem({this.onGetType, this.onListDirectory, this.onReadFile});
   final FileSystemEntityType Function(String)? onGetType;
   final List<FileEntry> Function(String)? onListDirectory;
   final String Function(String)? onReadFile;
-
-  _MockFileSystem({this.onGetType, this.onListDirectory, this.onReadFile});
 
   @override
   FileSystemEntityType getType(String path) {

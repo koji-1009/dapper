@@ -5,6 +5,8 @@ library;
 
 /// Result of front matter extraction.
 class FrontMatterResult {
+  const FrontMatterResult({this.frontMatter, required this.content});
+
   /// The YAML front matter content (without delimiters), or null if none.
   final String? frontMatter;
 
@@ -13,8 +15,6 @@ class FrontMatterResult {
 
   /// Whether front matter was found.
   bool get hasFrontMatter => frontMatter != null;
-
-  const FrontMatterResult({this.frontMatter, required this.content});
 }
 
 /// Extracts YAML front matter from the beginning of a document.

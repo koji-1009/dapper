@@ -2,14 +2,14 @@ import 'dart:io' as io;
 
 /// Entry returned by [FileSystem.listDirectory].
 class FileEntry {
+  /// Creates a file entry.
+  const FileEntry(this.path, {required this.isDirectory});
+
   /// The full path of the entry.
   final String path;
 
   /// Whether this entry is a directory.
   final bool isDirectory;
-
-  /// Creates a file entry.
-  const FileEntry(this.path, {required this.isDirectory});
 }
 
 /// File system operations.

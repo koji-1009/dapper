@@ -9,7 +9,7 @@ void main() {
     late MarkdownFormatter formatter;
 
     setUp(() {
-      formatter = MarkdownFormatter();
+      formatter = const MarkdownFormatter();
     });
 
     test('formats empty string', () {
@@ -54,7 +54,7 @@ void main() {
     });
 
     test('formats code block', () {
-      final input = '''
+      const input = '''
 ```dart
 void main() {}
 ```
@@ -86,13 +86,13 @@ void main() {}
 
     group('with proseWrap always', () {
       setUp(() {
-        formatter = MarkdownFormatter(
-          const FormatOptions(proseWrap: ProseWrap.always, printWidth: 40),
+        formatter = const MarkdownFormatter(
+          FormatOptions(proseWrap: ProseWrap.always, printWidth: 40),
         );
       });
 
       test('wraps long paragraphs', () {
-        final input =
+        const input =
             'This is a very long paragraph that should be wrapped at the specified width.';
         final result = formatter.format(input);
         final lines = result.trim().split('\n');
@@ -105,7 +105,7 @@ void main() {}
 
     group('Front matter', () {
       test('preserves front matter during formatting', () {
-        final input = '''---
+        const input = '''---
 title: Test
 ---
 # Hello
@@ -122,7 +122,7 @@ title: Test
 
     group('Definition lists', () {
       test('formats definition lists', () {
-        final input = '''Term 1
+        const input = '''Term 1
 : Definition 1
 
 Term 2
@@ -152,7 +152,7 @@ Term 2
 
     group('Deep nesting', () {
       test('handles 5 levels of list nesting', () {
-        final input = '''- L1
+        const input = '''- L1
   - L2
     - L3
       - L4
@@ -167,7 +167,7 @@ Term 2
       });
 
       test('does not insert extra blank lines between nested list items', () {
-        final input = '''- [clock](https://pub.dev/packages/clock)
+        const input = '''- [clock](https://pub.dev/packages/clock)
   - Get current time and mock time
 - [crypto](https://pub.dev/packages/crypto)
   - Get persistent file name from URL and options
@@ -187,7 +187,7 @@ Term 2
       });
 
       test('preserves nested list structure with mixed content', () {
-        final input = '''- Parent 1
+        const input = '''- Parent 1
   - Child 1a
   - Child 1b
 - Parent 2
@@ -216,7 +216,7 @@ Term 2
       });
 
       test('normalizes spaces in list items', () {
-        final input = '''
+        const input = '''
 *   Item 1
 *    Item 2
 ''';
@@ -239,7 +239,7 @@ Term 2
 
     group('Table formatting', () {
       test('aligns table columns', () {
-        final input = '''| a | b |
+        const input = '''| a | b |
 |---|---|
 | 1 | 2 |
 | 10 | 20 |''';
@@ -249,7 +249,7 @@ Term 2
       });
 
       test('handles table alignment markers', () {
-        final input = '''| Left | Center | Right |
+        const input = '''| Left | Center | Right |
 |:-----|:------:|------:|
 | L | C | R |''';
         final result = formatter.format(input);
@@ -313,15 +313,15 @@ Term 2
     late MarkdownFormatter formatter;
 
     setUp(() {
-      formatter = MarkdownFormatter();
+      formatter = const MarkdownFormatter();
     });
 
     group('proseWrap always', () {
       late MarkdownFormatter wrapFormatter;
 
       setUp(() {
-        wrapFormatter = MarkdownFormatter(
-          const FormatOptions(proseWrap: ProseWrap.always, printWidth: 30),
+        wrapFormatter = const MarkdownFormatter(
+          FormatOptions(proseWrap: ProseWrap.always, printWidth: 30),
         );
       });
 
@@ -393,7 +393,7 @@ Term 2
 
     group('Tables', () {
       test('formats table with center alignment', () {
-        final input = '''| Center |
+        const input = '''| Center |
 |:------:|
 | data |''';
         final result = formatter.format(input);
@@ -402,7 +402,7 @@ Term 2
       });
 
       test('formats table with right alignment', () {
-        final input = '''| Right |
+        const input = '''| Right |
 |------:|
 | data |''';
         final result = formatter.format(input);
@@ -410,7 +410,7 @@ Term 2
       });
 
       test('formats table with left alignment', () {
-        final input = '''| Left |
+        const input = '''| Left |
 |:------|
 | data |''';
         final result = formatter.format(input);
@@ -423,7 +423,7 @@ Term 2
       });
 
       test('handles table with multiple columns', () {
-        final input = '''| A | B | C |
+        const input = '''| A | B | C |
 |---|---|---|
 | 1 | 2 | 3 |''';
         final result = formatter.format(input);
@@ -435,7 +435,7 @@ Term 2
 
     group('Complex list items', () {
       test('handles list with nested paragraphs', () {
-        final input = '''- Item 1
+        const input = '''- Item 1
 
   Continued paragraph
 
@@ -446,7 +446,7 @@ Term 2
       });
 
       test('handles ordered list with many items', () {
-        final input = '''1. One
+        const input = '''1. One
 2. Two
 3. Three
 4. Four
@@ -463,7 +463,7 @@ Term 2
 
     group('Code blocks', () {
       test('formats code block without language', () {
-        final input = '''```
+        const input = '''```
 code here
 ```''';
         final result = formatter.format(input);
@@ -472,7 +472,7 @@ code here
       });
 
       test('formats code block with trailing newline', () {
-        final input = '''```js
+        const input = '''```js
 code
 ```''';
         final result = formatter.format(input);
@@ -502,8 +502,8 @@ code
 
     group('proseWrap never', () {
       test('never wraps long paragraphs', () {
-        final neverFormatter = MarkdownFormatter(
-          const FormatOptions(proseWrap: ProseWrap.never, printWidth: 10),
+        const neverFormatter = MarkdownFormatter(
+          FormatOptions(proseWrap: ProseWrap.never, printWidth: 10),
         );
         final result = neverFormatter.format('This is a very long line');
         expect(result.trim(), 'This is a very long line');
@@ -512,7 +512,7 @@ code
 
     group('Definition list with markdown', () {
       test('formats markdown followed by definition list', () {
-        final input = '''# Heading
+        const input = '''# Heading
 
 Some paragraph text.
 
@@ -527,7 +527,7 @@ Term
       });
 
       test('formats definition list followed by markdown', () {
-        final input = '''Term
+        const input = '''Term
 : Definition
 
 # Next Section
@@ -539,7 +539,7 @@ Term
       });
 
       test('formats markdown between definition lists', () {
-        final input = '''Term1
+        const input = '''Term1
 : Def1
 
 Paragraph between.

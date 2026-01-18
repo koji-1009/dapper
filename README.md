@@ -42,7 +42,7 @@ void main() {
 
 *emphasis* and **strong**
 ''');
-  
+
   print(result);
   // Output:
   // # Hello

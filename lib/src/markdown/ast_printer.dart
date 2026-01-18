@@ -310,7 +310,7 @@ class MarkdownPrinter {
 
     for (final line in code.split('\n')) {
       _writeIndent();
-      _writeLine(line);
+      _writeLine(line.trimRight());
     }
 
     _writeIndent();

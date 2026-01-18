@@ -478,6 +478,29 @@ code
         final result = formatter.format(input);
         expect(result, contains('```js'));
       });
+
+      test('handles nested list code block with blank lines', () {
+        const input = '''
+* A
+  * A
+  ```
+  code1
+  
+  code2
+  ```
+''';
+        final formatted1 = formatter.format(input);
+        final formatted2 = formatter.format(formatted1);
+
+        expect(
+          formatted2,
+          formatted1,
+          reason: 'Formatter should be idempotent',
+        );
+
+        // Verify no extra indentation on the blank line
+        expect(formatted1, contains('\n  code1\n  \n  code2\n'));
+      });
     });
 
     group('Nested formatting', () {

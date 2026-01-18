@@ -1,5 +1,9 @@
 ## Next
 
+### Fixed
+
+* Fix space accumulation on blank lines in nested code blocks.
+
 ### Added
 
 * Added `strict-casts`, `strict-inference`, and `strict-raw-types` to `analysis_options.yaml` for stronger type safety.
@@ -9,7 +13,7 @@
 ### Changed
 
 * Refactor: Use relative imports in `lib/bin/` to improve code organization.
-* Fix: Add explicit type arguments to `Future` and `Iterable` in tests to satisfy strict mode.## 1.4.0
+* Fix: Add explicit type arguments to `Future` and `Iterable` in tests to satisfy strict mode.
 
 ## 1.4.0
 

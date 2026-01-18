@@ -137,6 +137,13 @@ void main() {
         ]);
         expect(result.code, 0);
       });
+      test('returns success and ignores non-formattable file', () {
+        final file = File('${tempDir.path}/test.txt');
+        file.writeAsStringSync('text');
+
+        // Should return success and do nothing
+        expect(runQuietly(['-o', 'none', file.path]).code, 0);
+      });
     });
 
     group('directory traversal', () {
@@ -335,8 +342,136 @@ ul_style: dash
     });
   });
 
+  group('Execution Stats', () {
+    late Directory tempDir;
+
+    setUp(() {
+      tempDir = Directory.systemTemp.createTempSync('dapper_cli_stats_test_');
+    });
+
+    tearDown(() {
+      tempDir.deleteSync(recursive: true);
+    });
+
+    (ExitCode, String) runCapturingStdout(List<String> args) {
+      final buffer = StringBuffer();
+      final result = IOOverrides.runZoned(
+        () => const DapperCli().run(args),
+        stdout: () => _StringBufferStdout(buffer),
+        stderr: () => _NullStdout(),
+      );
+      return (result, buffer.toString());
+    }
+
+    test('prints stats in write mode', () {
+      final file = File('${tempDir.path}/test.md');
+      file.writeAsStringSync('# Hello\n');
+
+      final (_, output) = runCapturingStdout(['-o', 'write', file.path]);
+      expect(output, matches(r'Formatted 1 files in [0-9.]+ seconds\.'));
+    });
+
+    test('prints changed files count in write mode', () {
+      final file = File('${tempDir.path}/test.md');
+      file.writeAsStringSync('*emphasis*\n');
+
+      final (_, output) = runCapturingStdout(['-o', 'write', file.path]);
+      expect(
+        output,
+        matches(r'Formatted 1 files \(1 changed\) in [0-9.]+ seconds\.'),
+      );
+    });
+
+    test('does not print stats in show mode', () {
+      final file = File('${tempDir.path}/test.md');
+      file.writeAsStringSync('# Hello\n');
+
+      final (_, output) = runCapturingStdout(['-o', 'show', file.path]);
+      expect(output, isNot(contains('Formatted 1 files')));
+      expect(output, contains('# Hello'));
+    });
+
+    test('does not print stats in json mode', () {
+      final file = File('${tempDir.path}/test.md');
+      file.writeAsStringSync('# Hello\n');
+
+      final (_, output) = runCapturingStdout(['-o', 'json', file.path]);
+      expect(output, isNot(contains('Formatted 1 files')));
+      expect(output, contains('"path":'));
+    });
+  });
+
   // Additional tests with mock file system
   _testWithMockFileSystem();
+}
+
+/// A stdout that writes to a StringBuffer.
+class _StringBufferStdout implements Stdout {
+  _StringBufferStdout(this._buffer);
+  final StringBuffer _buffer;
+
+  @override
+  void write(Object? object) => _buffer.write(object);
+
+  @override
+  void writeln([Object? object = '']) => _buffer.writeln(object);
+
+  @override
+  void writeAll(Iterable<dynamic> objects, [String separator = '']) {
+    _buffer.writeAll(objects, separator);
+  }
+
+  @override
+  void add(List<int> data) => _buffer.write(utf8.decode(data));
+
+  @override
+  void writeCharCode(int charCode) => _buffer.writeCharCode(charCode);
+
+  @override
+  void addError(Object error, [StackTrace? stackTrace]) {}
+
+  @override
+  Future<dynamic> addStream(Stream<List<int>> stream) async {
+    await for (final data in stream) {
+      add(data);
+    }
+  }
+
+  @override
+  Future<dynamic> flush() => Future.value();
+
+  @override
+  Future<dynamic> close() => Future.value();
+
+  @override
+  Future<dynamic> get done => Future.value();
+
+  @override
+  Encoding get encoding => utf8;
+
+  @override
+  set encoding(Encoding encoding) {}
+
+  @override
+  bool get hasTerminal => false;
+
+  @override
+  IOSink get nonBlocking => this;
+
+  @override
+  bool get supportsAnsiEscapes => false;
+
+  @override
+  int get terminalColumns => 80;
+
+  @override
+  int get terminalLines => 24;
+
+  @override
+  String get lineTerminator => '\n';
+
+  @override
+  set lineTerminator(String terminator) {}
 }
 
 /// A stdout/stderr that discards all output.

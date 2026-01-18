@@ -9,6 +9,7 @@
 * Added `strict-casts`, `strict-inference`, and `strict-raw-types` to `analysis_options.yaml` for stronger type safety.
 * Added additional defensive linter rules: `avoid_catching_errors`, `cancel_subscriptions`, `close_sinks`, `directives_ordering`, `no_adjacent_strings_in_list`, `only_throw_errors`, `prefer_const_constructors_in_immutables`, `sort_constructors_first`, `test_types_in_equals`, `unnecessary_statements`, `use_super_parameters`.
 * Added `prefer_relative_imports` to linter rules.
+* Add execution time and file statistics to CLI output.
 
 ### Changed
 

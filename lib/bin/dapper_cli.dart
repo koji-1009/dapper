@@ -74,12 +74,23 @@ class DapperCli {
       final setExitIfChanged = results['set-exit-if-changed'] as bool;
       final options = _resolveOptions(results);
 
+      final stopwatch = Stopwatch()..start();
       final result = _processPaths(paths, outputMode, options);
+      stopwatch.stop();
 
-      if (result == ProcessResult.error) {
+      if (outputMode == OutputMode.write) {
+        final elapsed = stopwatch.elapsed.inMilliseconds / 1000.0;
+        final timeStr = elapsed.toStringAsFixed(2);
+        final sentence = result.changedFiles == 0
+            ? 'Formatted ${result.totalFiles} files'
+            : 'Formatted ${result.totalFiles} files (${result.changedFiles} changed)';
+        stdout.writeln('$sentence in $timeStr seconds.');
+      }
+
+      if (result.status == ProcessResult.error) {
         return ExitCode.error;
       }
-      if (setExitIfChanged && result == ProcessResult.changed) {
+      if (setExitIfChanged && result.status == ProcessResult.changed) {
         return ExitCode.changed;
       }
       return ExitCode.success;
@@ -170,21 +181,25 @@ class DapperCli {
     };
   }
 
-  ProcessResult _processPaths(
+  _ProcessResult _processPaths(
     List<String> paths,
     OutputMode outputMode,
     FormatOptions options,
   ) {
-    var result = ProcessResult.unchanged;
+    var result = (
+      status: ProcessResult.unchanged,
+      totalFiles: 0,
+      changedFiles: 0,
+    );
 
     for (final path in paths) {
-      result = result.merge(_processPath(path, outputMode, options));
+      result = _mergeResults(result, _processPath(path, outputMode, options));
     }
 
     return result;
   }
 
-  ProcessResult _processPath(
+  _ProcessResult _processPath(
     String path,
     OutputMode outputMode,
     FormatOptions options, {
@@ -201,23 +216,27 @@ class DapperCli {
         parentRules: parentRules,
       ),
       io.FileSystemEntityType.file => _processFile(path, outputMode, options),
-      _ => ProcessResult.unchanged,
+      _ => (status: ProcessResult.unchanged, totalFiles: 0, changedFiles: 0),
     };
   }
 
-  ProcessResult _handleNotFound(String path) {
+  _ProcessResult _handleNotFound(String path) {
     stderr.writeln('Error: "$path" not found.');
-    return ProcessResult.error;
+    return (status: ProcessResult.error, totalFiles: 0, changedFiles: 0);
   }
 
-  ProcessResult _processDirectory(
+  _ProcessResult _processDirectory(
     String dirPath,
     OutputMode outputMode,
     FormatOptions options, {
     IgnoreRules? parentRules,
     String? relativeBasePath,
   }) {
-    var result = ProcessResult.unchanged;
+    var result = (
+      status: ProcessResult.unchanged,
+      totalFiles: 0,
+      changedFiles: 0,
+    );
 
     // Load ignore rules for this directory and merge with parent rules
     var rules = IgnoreRules.loadFromDirectory(dirPath);
@@ -248,7 +267,8 @@ class DapperCli {
           continue;
         }
 
-        result = result.merge(
+        result = _mergeResults(
+          result,
           _processEntry(
             entry,
             outputMode,
@@ -260,13 +280,13 @@ class DapperCli {
       }
     } catch (e) {
       stderr.writeln('Error analyzing directory "$dirPath": $e');
-      return ProcessResult.error;
+      return (status: ProcessResult.error, totalFiles: 0, changedFiles: 0);
     }
 
     return result;
   }
 
-  ProcessResult _processEntry(
+  _ProcessResult _processEntry(
     FileEntry entry,
     OutputMode outputMode,
     FormatOptions options,
@@ -285,16 +305,16 @@ class DapperCli {
     if (_isFormattableFile(entry.path)) {
       return _processFile(entry.path, outputMode, options);
     }
-    return ProcessResult.unchanged;
+    return (status: ProcessResult.unchanged, totalFiles: 0, changedFiles: 0);
   }
 
-  ProcessResult _processFile(
+  _ProcessResult _processFile(
     String filePath,
     OutputMode outputMode,
     FormatOptions options,
   ) {
     if (!_isFormattableFile(filePath)) {
-      return ProcessResult.unchanged;
+      return (status: ProcessResult.unchanged, totalFiles: 0, changedFiles: 0);
     }
 
     try {
@@ -304,10 +324,14 @@ class DapperCli {
 
       _outputResult(filePath, formatted, changed, outputMode);
 
-      return changed ? ProcessResult.changed : ProcessResult.unchanged;
+      return (
+        status: changed ? ProcessResult.changed : ProcessResult.unchanged,
+        totalFiles: 1,
+        changedFiles: changed ? 1 : 0,
+      );
     } catch (e) {
       stderr.writeln('Error formatting "$filePath": $e');
-      return ProcessResult.error;
+      return (status: ProcessResult.error, totalFiles: 1, changedFiles: 0);
     }
   }
 
@@ -357,4 +381,18 @@ class DapperCli {
 
     return content;
   }
+
+  _ProcessResult _mergeResults(_ProcessResult a, _ProcessResult b) {
+    return (
+      status: a.status.merge(b.status),
+      totalFiles: a.totalFiles + b.totalFiles,
+      changedFiles: a.changedFiles + b.changedFiles,
+    );
+  }
 }
+
+typedef _ProcessResult = ({
+  ProcessResult status,
+  int totalFiles,
+  int changedFiles,
+});

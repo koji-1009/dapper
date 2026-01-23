@@ -35,7 +35,7 @@ class MarkdownPrinter {
     if (node is md.Element) {
       _printElement(node);
     } else if (node is md.Text) {
-      _printText(node);
+      _printRawBlock(node);
     } else if (node is md.UnparsedContent) {
       _write(node.textContent);
     }
@@ -503,8 +503,19 @@ class MarkdownPrinter {
     }
   }
 
-  void _printText(md.Text text) {
-    _write(text.textContent);
+  /// Prints a raw text block (e.g., HTML comments) with proper blank line handling.
+  void _printRawBlock(md.Text text) {
+    _ensureBlankLine();
+
+    final content = text.textContent;
+    _write(content);
+
+    // Ensure content ends with newline
+    if (!content.endsWith('\n')) {
+      _newLine();
+    }
+
+    _needsBlankLine = true;
   }
 
   void _printChildren(md.Element element) {

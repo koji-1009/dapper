@@ -181,5 +181,54 @@ Term
       const formatter = MarkdownFormatter();
       expect(formatter.format(input), expected);
     });
+
+    group('HTML comments', () {
+      test('preserves blank line after HTML comment', () {
+        const input = '''<!--
+This README describes the package. If you publish this package to pub.dev,
+this README's contents appear on the landing page for your package.
+-->
+
+TODO: Put a short description of the package here that helps potential users
+know whether this package might be useful for them.
+''';
+
+        const formatter = MarkdownFormatter();
+        final result = formatter.format(input);
+
+        // Should preserve the blank line between --> and TODO
+        expect(result, contains('-->\n\n'));
+        expect(result, contains('TODO: Put a short description'));
+      });
+
+      test('preserves formatting idempotently', () {
+        const input = '''<!--
+Comment here
+-->
+
+Paragraph text.
+''';
+
+        const formatter = MarkdownFormatter();
+        final once = formatter.format(input);
+        final twice = formatter.format(once);
+
+        expect(twice, once, reason: 'Formatting should be idempotent');
+      });
+
+      test('handles single line HTML comment with following content', () {
+        const input = '''<!-- short comment -->
+
+Next paragraph here.
+''';
+
+        const formatter = MarkdownFormatter();
+        final result = formatter.format(input);
+
+        expect(result, contains('<!-- short comment -->'));
+        expect(result, contains('\n\n'));
+        expect(result, contains('Next paragraph here'));
+      });
+    });
   });
 }

@@ -435,5 +435,40 @@ void main() {
       // Note: paragraph renders inline content
       expect(result, contains('inline raw'));
     });
+
+    group('HTML comments and raw blocks', () {
+      test('preserves blank line after raw Text node', () {
+        // HTML comments are parsed as raw Text nodes by the markdown package
+        final htmlComment = md.Text('<!--\nComment content\n-->');
+        final paragraph = md.Element('p', [md.Text('Following paragraph')]);
+        final result = printer.print([htmlComment, paragraph]);
+
+        // Should have blank line between comment and paragraph
+        expect(result, contains('-->\n\n'));
+        expect(result, contains('Following paragraph'));
+      });
+
+      test('preserves blank line before raw Text node after paragraph', () {
+        final paragraph = md.Element('p', [md.Text('Before comment')]);
+        final htmlComment = md.Text('<!-- after -->');
+        final result = printer.print([paragraph, htmlComment]);
+
+        expect(result, contains('Before comment'));
+        expect(result, contains('\n\n<!-- after -->'));
+      });
+
+      test('handles raw text without trailing newline', () {
+        final rawText = md.Text('raw text');
+        final result = printer.print([rawText]);
+        expect(result, endsWith('\n'));
+      });
+
+      test('handles raw text with trailing newline', () {
+        final rawText = md.Text('raw text\n');
+        final result = printer.print([rawText]);
+        expect(result, endsWith('\n'));
+        expect(result, isNot(contains('raw text\n\n\n'))); // No extra newlines
+      });
+    });
   });
 }

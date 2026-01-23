@@ -1,3 +1,9 @@
+## Next
+
+### Fixed
+
+* Preserve blank lines after HTML comments in Markdown formatting
+
 ## 1.4.1
 
 ### Fixed

@@ -467,8 +467,21 @@ void main() {
         final rawText = md.Text('raw text\n');
         final result = printer.print([rawText]);
         expect(result, endsWith('\n'));
-        expect(result, isNot(contains('raw text\n\n\n'))); // No extra newlines
+        expect(result, isNot(contains('raw text\n\n\n')));
       });
     });
+
+    test(
+      'prints list item starting with paragraph inline (loose list normalization)',
+      () {
+        final p = md.Element('p', [md.Text('loose item')]);
+        final li = md.Element('li', [p]);
+        final ul = md.Element('ul', [li]);
+
+        final result = printer.print([ul]);
+
+        expect(result, contains('* loose item'));
+      },
+    );
   });
 }

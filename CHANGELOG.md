@@ -1,3 +1,9 @@
+## Next
+
+### Fixed
+
+* Fix broken indentation and layout when formatting loose lists (lists with blank lines).
+
 ## 1.4.2
 
 ### Fixed

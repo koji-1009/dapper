@@ -196,7 +196,7 @@ know whether this package might be useful for them.
         const formatter = MarkdownFormatter();
         final result = formatter.format(input);
 
-        // Should preserve the blank line between --> and TODO
+        // Should preserve the blank line between --> and "TODO"
         expect(result, contains('-->\n\n'));
         expect(result, contains('TODO: Put a short description'));
       });
@@ -229,6 +229,28 @@ Next paragraph here.
         expect(result, contains('\n\n'));
         expect(result, contains('Next paragraph here'));
       });
+    });
+
+    test('formats loose lists by normalizing to tight lists', () {
+      const input = '''
+* **test**
+  * test
+* **test**
+  * test
+
+* **test**
+''';
+
+      const expected = '''
+* **test**
+  * test
+* **test**
+  * test
+* **test**
+''';
+
+      const formatter = MarkdownFormatter();
+      expect(formatter.format(input), expected);
     });
   });
 }

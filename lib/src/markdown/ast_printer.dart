@@ -102,6 +102,7 @@ class MarkdownPrinter {
     _ensureBlankLine();
     final level = int.parse(element.tag[1]);
     final content = _renderInlineContent(element);
+    _writeIndent();
     _writeLine(normalizeHeading(level, content));
     _needsBlankLine = true;
   }
@@ -117,9 +118,11 @@ class MarkdownPrinter {
         options.printWidth - _currentIndent,
       );
       for (final line in lines) {
+        _writeIndent();
         _writeLine(line);
       }
     } else {
+      _writeIndent();
       _writeLine(content.trim());
     }
 
@@ -232,20 +235,48 @@ class MarkdownPrinter {
     inlineContent.write(prefix);
     var blockStartIndex = 0;
 
-    for (var i = 0; i < children.length; i++) {
-      final child = children[i];
-      if (_isInline(child)) {
-        inlineContent.write(_renderInlineNode(child));
-      } else {
-        blockStartIndex = i;
-        break;
+    // Special case: If the first child is a Paragraph, we treat it as inline content
+    // effectively "unwrapping" the paragraph so it sits on the same line as the bullet.
+    // This handles "loose" lists where items are wrapped in <p> tags.
+    if (children.isNotEmpty &&
+        children.first is md.Element &&
+        (children.first as md.Element).tag == 'p') {
+      final p = children.first as md.Element;
+      inlineContent.write(_renderInlineContent(p));
+      blockStartIndex = 1;
+    } else {
+      // Normal inline collection for non-paragraph starts (though rare in mixed content)
+      for (var i = 0; i < children.length; i++) {
+        final child = children[i];
+        if (_isInline(child)) {
+          inlineContent.write(_renderInlineNode(child));
+        } else {
+          blockStartIndex = i;
+          break;
+        }
       }
     }
 
     // Write inline content first
     final inlineText = inlineContent.toString().trim();
     if (inlineText.isNotEmpty) {
-      _writeLine(inlineText);
+      if (options.proseWrap == ProseWrap.always) {
+        final lines = wrapText(
+          normalizeWhitespace(inlineText),
+          options.printWidth - _currentIndent - prefix.length,
+        );
+        _write(lines.first);
+        _newLine();
+        for (var i = 1; i < lines.length; i++) {
+          _writeIndent();
+          if (prefix.isNotEmpty) {
+            _write('    '); // Indent for checkbox
+          }
+          _writeLine(lines[i]);
+        }
+      } else {
+        _writeLine(inlineText);
+      }
     } else {
       // Checkbox with no inline text, just output newline
       _newLine();

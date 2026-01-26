@@ -471,17 +471,241 @@ void main() {
       });
     });
 
-    test(
-      'prints list item starting with paragraph inline (loose list normalization)',
-      () {
-        final p = md.Element('p', [md.Text('loose item')]);
-        final li = md.Element('li', [p]);
+    group('complex list items', () {
+      test('prints complex list item starting with text (mixed content)', () {
+        // li -> [Text, ul]
+        final nestedLi = md.Element('li', [md.Text('nested')]);
+        final nestedUl = md.Element('ul', [nestedLi]);
+        final li = md.Element('li', [md.Text('item '), nestedUl]);
         final ul = md.Element('ul', [li]);
 
         final result = printer.print([ul]);
+        expect(result, contains('* item'));
+        expect(result, contains('  * nested'));
+      });
 
-        expect(result, contains('* loose item'));
+      test(
+        'prints complex list item starting with paragraph (unwrapping p)',
+        () {
+          // li -> [p, ul]
+          final nestedLi = md.Element('li', [md.Text('nested')]);
+          final nestedUl = md.Element('ul', [nestedLi]);
+          final p = md.Element('p', [md.Text('item')]);
+          final li = md.Element('li', [p, nestedUl]);
+          final ul = md.Element('ul', [li]);
+
+          final result = printer.print([ul]);
+          expect(result, contains('* item'));
+          expect(result, contains('  * nested'));
+        },
+      );
+
+      test(
+        'prints complex list item starting with non-p block element directly',
+        () {
+          // li -> [ul] (empty text)
+          final nestedLi = md.Element('li', [md.Text('nested')]);
+          final nestedUl = md.Element('ul', [nestedLi]);
+          final li = md.Element('li', [nestedUl]);
+          final ul = md.Element('ul', [li]);
+
+          final result = printer.print([ul]);
+          // Should print bullet, newline, then indented nested list
+          // *
+          //   * nested
+          expect(result, matches(r'\*\s*\n\s+\* nested'));
+        },
+      );
+
+      test('prints complex checkbox item starting with text', () {
+        // li -> [input, Text, ul]
+        final input = md.Element.empty('input');
+        input.attributes['type'] = 'checkbox';
+        input.attributes['checked'] = 'true';
+
+        final nestedLi = md.Element('li', [md.Text('nested')]);
+        final nestedUl = md.Element('ul', [nestedLi]);
+        final li = md.Element('li', [input, md.Text(' item '), nestedUl]);
+        final ul = md.Element('ul', [li]);
+
+        final result = printer.print([ul]);
+        expect(result, contains('* [x]  item'));
+        expect(result, contains('  * nested'));
+      });
+
+      test('prints complex checkbox item starting with paragraph', () {
+        // li -> [input, p, ul]
+        final input = md.Element.empty('input');
+        input.attributes['type'] = 'checkbox';
+
+        final nestedLi = md.Element('li', [md.Text('nested')]);
+        final nestedUl = md.Element('ul', [nestedLi]);
+        final p = md.Element('p', [md.Text('item')]);
+        final li = md.Element('li', [input, p, nestedUl]);
+        final ul = md.Element('ul', [li]);
+
+        final result = printer.print([ul]);
+        expect(result, contains('* [ ] item'));
+        expect(result, contains('  * nested'));
+      });
+
+      test(
+        'prints complex checkbox item starting with non-p block element',
+        () {
+          // li -> [input, ul]
+          final input = md.Element.empty('input');
+          input.attributes['type'] = 'checkbox';
+
+          final nestedLi = md.Element('li', [md.Text('nested')]);
+          final nestedUl = md.Element('ul', [nestedLi]);
+          final li = md.Element('li', [input, nestedUl]);
+          final ul = md.Element('ul', [li]);
+
+          final result = printer.print([ul]);
+          // * [ ]
+          //     * nested
+          expect(result, matches(r'\* \[ \]\s*\n\s+\* nested'));
+        },
+      );
+
+      test('prints complex list item with proseWrap: always', () {
+        final wrapPrinter = MarkdownPrinter(
+          const FormatOptions(proseWrap: ProseWrap.always, printWidth: 20),
+        );
+
+        // li -> [Text (long), ul]
+        final nestedLi = md.Element('li', [md.Text('nested')]);
+        final nestedUl = md.Element('ul', [nestedLi]);
+        // "This is a long text that needs wrapping" (36 chars) > 20
+        final li = md.Element('li', [
+          md.Text('This is a long text that needs wrapping'),
+          nestedUl,
+        ]);
+        final ul = md.Element('ul', [li]);
+
+        final result = wrapPrinter.print([ul]);
+
+        // Should wrap the inline text and then print the nested list
+        // * This is a long
+        //   text that needs
+        //   wrapping
+        //   * nested
+        expect(result, contains('  text that needs'));
+        expect(result, contains('  wrapping'));
+        expect(result, contains('  * nested'));
+      });
+
+      test('prints checkbox item with proseWrap: always and wrapping', () {
+        final wrapPrinter = MarkdownPrinter(
+          const FormatOptions(proseWrap: ProseWrap.always, printWidth: 20),
+        );
+        final input = md.Element.empty('input');
+        input.attributes['type'] = 'checkbox';
+        input.attributes['checked'] = 'true';
+        final li = md.Element('li', [
+          input,
+          md.Text('This is a long text to wrap'),
+        ]);
+        final ul = md.Element('ul', [li]);
+        final result = wrapPrinter.print([ul]);
+
+        // * [x] This is a long
+        //       text to wrap
+        expect(result, contains('* [x] This is a long'));
+        expect(result, contains('    text to wrap'));
+      });
+
+      test(
+        'prints complex checkbox item with proseWrap: always and wrapping',
+        () {
+          final wrapPrinter = MarkdownPrinter(
+            const FormatOptions(proseWrap: ProseWrap.always, printWidth: 20),
+          );
+          final input = md.Element.empty('input');
+          input.attributes['type'] = 'checkbox';
+          input.attributes['checked'] = 'true';
+          final nestedUl = md.Element('ul', [
+            md.Element('li', [md.Text('nested')]),
+          ]);
+
+          final li = md.Element('li', [
+            input,
+            md.Text('This is a long text that needs wrapping'),
+            nestedUl,
+          ]);
+          final ul = md.Element('ul', [li]);
+
+          final result = wrapPrinter.print([ul]);
+
+          // Should wrap:
+          // * [x] This is a
+          //       long text that
+          //       needs wrapping
+          //   * nested
+          expect(result, contains('* [x] This is a'));
+          expect(result, contains('    long text that'));
+          expect(result, contains('    needs wrapping'));
+          expect(result, contains('  * nested'));
+        },
+      );
+    });
+
+    test(
+      'prints blockquote with multiple paragraphs (empty line handling)',
+      () {
+        final p1 = md.Element('p', [md.Text('Para 1')]);
+        final p2 = md.Element('p', [md.Text('Para 2')]);
+        final bq = md.Element('blockquote', [p1, p2]);
+
+        final result = printer.print([bq]);
+        expect(result, contains('> Para 1'));
+        expect(result, contains('>\n> Para 2'));
       },
     );
+
+    test('prints code block stripping trailing newline', () {
+      final code = md.Element('code', [md.Text('line1\n')]);
+      final pre = md.Element('pre', [code]);
+
+      final result = printer.print([pre]);
+      expect(result, contains('line1'));
+      expect(result, isNot(contains('\n\n```')));
+    });
+
+    test('prints unordered list with dash style', () {
+      final dashPrinter = MarkdownPrinter(
+        const FormatOptions(ulStyle: UnorderedListStyle.dash),
+      );
+      final li = md.Element('li', [md.Text('item')]);
+      final ul = md.Element('ul', [li]);
+      final result = dashPrinter.print([ul]);
+      expect(result, contains('- item'));
+    });
+
+    test('prints unordered list with plus style', () {
+      final plusPrinter = MarkdownPrinter(
+        const FormatOptions(ulStyle: UnorderedListStyle.plus),
+      );
+      final li = md.Element('li', [md.Text('item')]);
+      final ul = md.Element('ul', [li]);
+      final result = plusPrinter.print([ul]);
+      expect(result, contains('+ item'));
+    });
+
+    test('prints table with mixed alignment (including none)', () {
+      final th1 = md.Element('th', [md.Text('None')]);
+      final th2 = md.Element('th', [md.Text('Left')]);
+      th2.attributes['align'] = 'left';
+      final tr = md.Element('tr', [th1, th2]);
+      final thead = md.Element('thead', [tr]);
+      final tbody = md.Element('tbody', []); // Empty body for coverage
+
+      final table = md.Element('table', [thead, tbody]);
+      final result = printer.print([table]);
+
+      // None: ---- | (width 4)
+      // Left: :----|
+      expect(result, contains(' ---- |:---- |'));
+    });
   });
 }

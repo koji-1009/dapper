@@ -231,28 +231,6 @@ Next paragraph here.
       });
     });
 
-    test('formats simple loose list by normalizing to tight list', () {
-      const input = '''
-* test
-  * test
-* test
-  * test
-
-* test
-''';
-
-      const expected = '''
-* test
-  * test
-* test
-  * test
-* test
-''';
-
-      const formatter = MarkdownFormatter();
-      expect(formatter.format(input), expected);
-    });
-
     test('formats loose lists by normalizing to tight lists', () {
       const input = '''
 * **test**

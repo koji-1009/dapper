@@ -2,8 +2,7 @@
 
 [![pub package](https://img.shields.io/pub/v/dapper.svg)](https://pub.dev/packages/dapper)
 [![demo](https://img.shields.io/badge/demo-online-brightgreen)](https://koji-1009.github.io/dapper/)
-[![Test](https://github.com/koji-1009/dapper/actions/workflows/test.yml/badge.svg)](https://github.com/koji-1009/dapper/actions/workflows/test.yml)
-[![Analyze](https://github.com/koji-1009/dapper/actions/workflows/analyze.yml/badge.svg)](https://github.com/koji-1009/dapper/actions/workflows/analyze.yml)
+[![analyze](https://github.com/koji-1009/dapper/actions/workflows/analyze.yml/badge.svg)](https://github.com/koji-1009/dapper/actions/workflows/analyze.yml)
 [![codecov](https://codecov.io/gh/koji-1009/dapper/graph/badge.svg)](https://codecov.io/gh/koji-1009/dapper)
 
 A simple Markdown and YAML formatter for Dart, inspired by Prettier.

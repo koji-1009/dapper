@@ -196,4 +196,4 @@ dart run bin/dapper.dart .
 
 ## License
 
-MIT
+MIT License - see [LICENSE](LICENSE) for details.

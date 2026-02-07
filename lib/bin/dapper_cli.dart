@@ -15,9 +15,9 @@ import 'output_mode.dart';
 import 'process_result.dart';
 
 /// Runs the Dapper CLI.
-void run(List<String> arguments) {
+void run(List<String> arguments, {DapperCli cli = const DapperCli()}) {
   try {
-    final result = const DapperCli().run(arguments);
+    final result = cli.run(arguments);
     exitCode = result.code;
   } catch (e, stack) {
     stderr.writeln('Unexpected error: $e');

@@ -1,3 +1,13 @@
+## 1.4.4
+
+### Refactored
+
+* **Internal**: Refactored CLI entrypoint (`bin/dapper.dart`) to follow best practices:
+  * Added POSIX-compliant shebang (`#!/usr/bin/env dart`).
+  * Replaced unsafe `exit()` calls with `exitCode` setter.
+  * Added top-level error handling.
+  * Extracted execution logic to `dapper.run()` in `lib/bin/dapper_cli.dart`.
+
 ## 1.4.3
 
 ### Fixed

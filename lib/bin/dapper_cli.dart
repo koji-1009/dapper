@@ -14,6 +14,18 @@ import 'ignore_rules.dart';
 import 'output_mode.dart';
 import 'process_result.dart';
 
+/// Runs the Dapper CLI.
+void run(List<String> arguments) {
+  try {
+    final result = const DapperCli().run(arguments);
+    exitCode = result.code;
+  } catch (e, stack) {
+    stderr.writeln('Unexpected error: $e');
+    stderr.writeln(stack);
+    exitCode = ExitCode.error.code;
+  }
+}
+
 /// Command-line interface for the Dapper formatter.
 class DapperCli {
   /// Creates a new CLI instance.

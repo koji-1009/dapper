@@ -13,8 +13,7 @@
 /// import 'package:dapper/bin.dart';
 ///
 /// void main(List<String> args) {
-///   final result = const DapperCli().run(args);
-///   exit(result.code);
+///   run(args);
 /// }
 /// ```
 library;

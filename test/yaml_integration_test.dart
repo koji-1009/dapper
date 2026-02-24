@@ -187,6 +187,108 @@ steps:
       expect(formatYaml(input), expected);
     });
 
+    group('Idempotency', () {
+      test('pubspec.yaml is idempotent', () {
+        const input = '''
+name: dapper
+description: A shiny new package.
+version: 1.0.0
+publish_to: none
+
+environment:
+  sdk: '>=3.0.0 <4.0.0'
+
+dependencies:
+  path: ^1.8.0
+  yaml: ^3.1.0
+
+dev_dependencies:
+  lints: ^2.0.0
+  test: ^1.21.0
+
+flutter:
+  uses-material-design: true
+  assets:
+    - assets/images/
+    - assets/fonts/
+''';
+
+        final once = formatYaml(input);
+        final twice = formatYaml(once);
+        expect(twice, once, reason: 'Formatting should be idempotent');
+      });
+
+      test('messy YAML is idempotent', () {
+        const input = '''
+name:   my_package
+version:    1.0.0
+
+
+dependencies:
+    # A dependency with a comment
+    flutter:
+      sdk: flutter
+    dapper:   ^1.0.0
+
+
+dev_dependencies:
+  lints: '>=2.0.0 <3.0.0'
+''';
+
+        final once = formatYaml(input);
+        final twice = formatYaml(once);
+        expect(twice, once, reason: 'Formatting should be idempotent');
+      });
+
+      test('GitHub Actions workflow is idempotent', () {
+        const input = '''
+name: CI
+
+on:
+  push:
+    branches: [ "main" ]
+  pull_request:
+    branches: [ "main" ]
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+
+    steps:
+      - uses: actions/checkout@v3
+
+      - name: Set up Dart
+        uses: dart-lang/setup-dart@v1
+        with:
+          sdk: stable
+
+      - name: Run tests
+        run: dart test
+''';
+
+        final once = formatYaml(input);
+        final twice = formatYaml(once);
+        expect(twice, once, reason: 'Formatting should be idempotent');
+      });
+
+      test('block scalars are idempotent', () {
+        const input = '''
+strip: |-
+  text without newline
+keep: |+
+  text with
+  extra newlines
+
+clip: |
+  standard text
+''';
+
+        final once = formatYaml(input);
+        final twice = formatYaml(once);
+        expect(twice, once, reason: 'Formatting should be idempotent');
+      });
+    });
+
     test('formats block scalars with chomping indicators', () {
       const input = '''
 strip: |-

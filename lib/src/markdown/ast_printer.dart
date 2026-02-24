@@ -219,7 +219,7 @@ class MarkdownPrinter {
         for (var i = 1; i < lines.length; i++) {
           _writeIndent();
           if (prefix.isNotEmpty) {
-            _write('    '); // Indent for checkbox
+            _write(' ' * prefix.length); // Indent for checkbox
           }
           _writeLine(lines[i]);
         }
@@ -270,7 +270,7 @@ class MarkdownPrinter {
         for (var i = 1; i < lines.length; i++) {
           _writeIndent();
           if (prefix.isNotEmpty) {
-            _write('    '); // Indent for checkbox
+            _write(' ' * prefix.length); // Indent for checkbox
           }
           _writeLine(lines[i]);
         }
@@ -601,6 +601,10 @@ class MarkdownPrinter {
         case 'img':
           final src = node.attributes['src'] ?? '';
           final alt = node.attributes['alt'] ?? '';
+          final title = node.attributes['title'];
+          if (title != null) {
+            return '![$alt]($src "$title")';
+          }
           return '![$alt]($src)';
         case 'br':
           return '  \n';

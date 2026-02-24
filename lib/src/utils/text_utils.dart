@@ -47,39 +47,8 @@ String normalizeWhitespace(String text) {
   return text.replaceAll(RegExp(r'[ \t]+'), ' ').trim();
 }
 
-/// Removes trailing whitespace from each line.
-String trimTrailingWhitespace(String text) {
-  return text.split('\n').map((line) => line.trimRight()).join('\n');
-}
-
 /// Ensures the text ends with exactly one newline.
 String ensureTrailingNewline(String text) {
   final trimmed = text.trimRight();
   return trimmed.isEmpty ? '' : '$trimmed\n';
-}
-
-/// Counts the display width of a string.
-///
-/// Returns the character count (string length).
-int displayWidth(String text) {
-  return text.length;
-}
-
-/// Creates an indentation string of the specified width.
-String indent(int width, {bool useTabs = false, int tabWidth = 2}) {
-  if (width <= 0) return '';
-
-  if (useTabs) {
-    final tabs = width ~/ tabWidth;
-    final spaces = width % tabWidth;
-    return '\t' * tabs + ' ' * spaces;
-  }
-
-  return ' ' * width;
-}
-
-/// Repeats a string [count] times.
-String repeat(String text, int count) {
-  if (count <= 0) return '';
-  return text * count;
 }

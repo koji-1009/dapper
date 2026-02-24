@@ -187,15 +187,13 @@ class _YamlPrinter {
 
     for (var i = 0; i < sortedKeys.length; i++) {
       final key = sortedKeys[i];
-      final keyNode = map.nodes.keys.firstWhere(
-        (k) => k == key,
-      ); // Get the key node to access span
+      final keyNode = key as YamlNode;
       final valueNode = map.nodes[key]!;
 
       // Handle comments between keys, trimming leading newlines for the first key
       _printGap(
         _lastOffset,
-        (keyNode as YamlNode).span.start.offset,
+        keyNode.span.start.offset,
         trimLeadingNewlines: i == 0,
       );
 

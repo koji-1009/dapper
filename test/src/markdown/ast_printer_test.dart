@@ -164,8 +164,7 @@ void main() {
       img.attributes['title'] = 'Title';
       final p = md.Element('p', [img]);
       final result = printer.print([p]);
-      // Note: Current implementation doesn't preserve title in inline rendering
-      expect(result, contains('![alt](src'));
+      expect(result, contains('![alt](src "Title")'));
     });
 
     test('prints horizontal rule', () {

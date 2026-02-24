@@ -1,3 +1,21 @@
+## Next
+
+### Fixed
+
+* Fix inline images losing `title` attribute when rendered inside paragraphs or list items (e.g., `![alt](src "title")`).
+* Fix redundant O(n) key lookup per entry in YAML map formatting.
+* Fix hardcoded 4-space checkbox continuation indent to use actual prefix length.
+
+### Changed
+
+* Remove unused normalization functions from `normalizer.dart` (`normalizeEmphasis`, `normalizeHorizontalRule`, `normalizeUnorderedListMarker`, `orderedListContentIndent`, `normalizeCodeFence`) — these were superseded by AST-based formatting.
+* Remove unused utility functions from `text_utils.dart` (`displayWidth`, `indent`, `repeat`, `trimTrailingWhitespace`).
+
+### Added
+
+* Add idempotency integration tests for Markdown and YAML formatting.
+* Add integration test for inline image `title` attribute in list items.
+
 ## 1.4.4
 
 ### Refactored

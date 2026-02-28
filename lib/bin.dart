@@ -22,6 +22,6 @@ export 'bin/config_loader.dart';
 export 'bin/dapper_cli.dart';
 export 'bin/exit_code.dart';
 export 'bin/file_system.dart';
-export 'bin/ignore_rules.dart';
+export 'bin/ignore_rules.dart' show IgnorePattern, IgnoreRules;
 export 'bin/output_mode.dart';
 export 'bin/process_result.dart';

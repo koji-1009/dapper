@@ -11,12 +11,14 @@ void main() {
       expect(options.printWidth, 80);
       expect(options.tabWidth, 2);
       expect(options.proseWrap, ProseWrap.preserve);
+      expect(options.ulStyle, UnorderedListStyle.asterisk);
     });
 
     test('defaults static constant matches constructor defaults', () {
       expect(FormatOptions.defaults.printWidth, 80);
       expect(FormatOptions.defaults.tabWidth, 2);
       expect(FormatOptions.defaults.proseWrap, ProseWrap.preserve);
+      expect(FormatOptions.defaults.ulStyle, UnorderedListStyle.asterisk);
     });
 
     test('accepts custom values', () {
@@ -55,16 +57,27 @@ void main() {
         expect(modified.proseWrap, ProseWrap.always);
       });
 
+      test('modifies ulStyle only', () {
+        const original = FormatOptions();
+        final modified = original.copyWith(ulStyle: UnorderedListStyle.dash);
+        expect(modified.printWidth, original.printWidth);
+        expect(modified.tabWidth, original.tabWidth);
+        expect(modified.proseWrap, original.proseWrap);
+        expect(modified.ulStyle, UnorderedListStyle.dash);
+      });
+
       test('preserves all fields when no arguments', () {
         const original = FormatOptions(
           printWidth: 100,
           tabWidth: 4,
           proseWrap: ProseWrap.always,
+          ulStyle: UnorderedListStyle.dash,
         );
         final modified = original.copyWith();
         expect(modified.printWidth, 100);
         expect(modified.tabWidth, 4);
         expect(modified.proseWrap, ProseWrap.always);
+        expect(modified.ulStyle, UnorderedListStyle.dash);
       });
     });
 
@@ -116,12 +129,14 @@ void main() {
         printWidth: 100,
         tabWidth: 4,
         proseWrap: ProseWrap.always,
+        ulStyle: UnorderedListStyle.dash,
       );
       final str = options.toString();
       expect(str, contains('FormatOptions'));
       expect(str, contains('printWidth: 100'));
       expect(str, contains('tabWidth: 4'));
       expect(str, contains('proseWrap: ProseWrap.always'));
+      expect(str, contains('ulStyle: UnorderedListStyle.dash'));
     });
   });
 
@@ -131,6 +146,15 @@ void main() {
       expect(ProseWrap.values, contains(ProseWrap.never));
       expect(ProseWrap.values, contains(ProseWrap.preserve));
       expect(ProseWrap.values.length, 3);
+    });
+  });
+
+  group('UnorderedListStyle', () {
+    test('has all expected values', () {
+      expect(UnorderedListStyle.values, contains(UnorderedListStyle.dash));
+      expect(UnorderedListStyle.values, contains(UnorderedListStyle.asterisk));
+      expect(UnorderedListStyle.values, contains(UnorderedListStyle.plus));
+      expect(UnorderedListStyle.values.length, 3);
     });
   });
 }

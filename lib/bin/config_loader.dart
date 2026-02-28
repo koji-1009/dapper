@@ -1,3 +1,6 @@
+/// Configuration file loader for format options.
+library;
+
 import 'dart:io';
 
 import 'package:yaml/yaml.dart';
@@ -76,11 +79,11 @@ class ConfigLoader {
       return null;
     }
 
-    return FormatOptions(
-      printWidth: printWidth ?? 80,
-      tabWidth: tabWidth ?? 2,
-      proseWrap: proseWrap ?? ProseWrap.preserve,
-      ulStyle: ulStyle ?? UnorderedListStyle.asterisk,
+    return FormatOptions.defaults.copyWith(
+      printWidth: printWidth,
+      tabWidth: tabWidth,
+      proseWrap: proseWrap,
+      ulStyle: ulStyle,
     );
   }
 

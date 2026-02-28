@@ -1,6 +1,10 @@
 /// Text utility functions for formatting.
 library;
 
+// Cached regular expressions.
+final _whitespacePattern = RegExp(r'\s+');
+final _whitespaceCollapsePattern = RegExp(r'[ \t]+');
+
 /// Wraps text at the specified width, breaking at word boundaries.
 ///
 /// Returns a list of lines, each no longer than [width] characters
@@ -14,7 +18,7 @@ List<String> wrapText(String text, int width) {
     return [''];
   }
 
-  final words = text.split(RegExp(r'\s+'));
+  final words = text.split(_whitespacePattern);
   final lines = <String>[];
   final buffer = StringBuffer();
 
@@ -44,7 +48,16 @@ List<String> wrapText(String text, int width) {
 /// - Collapses multiple spaces/tabs into single space
 /// - Trims leading and trailing whitespace
 String normalizeWhitespace(String text) {
-  return text.replaceAll(RegExp(r'[ \t]+'), ' ').trim();
+  return text.replaceAll(_whitespaceCollapsePattern, ' ').trim();
+}
+
+/// Counts the number of trailing newline characters in [text].
+int countTrailingNewlines(String text) {
+  var count = 0;
+  for (var i = text.length - 1; i >= 0 && text[i] == '\n'; i--) {
+    count++;
+  }
+  return count;
 }
 
 /// Ensures the text ends with exactly one newline.

@@ -6,6 +6,7 @@ library;
 import 'package:markdown/markdown.dart' as md;
 
 import '../options.dart';
+import '../utils/text_utils.dart';
 import 'ast_printer.dart';
 import 'definition_list.dart';
 import 'front_matter.dart';
@@ -79,7 +80,7 @@ class MarkdownFormatter {
           final formatted = _formatMarkdown(segment.content);
           if (formatted.trim().isNotEmpty) {
             buffer.write(formatted);
-            endsWithNewlines = _countTrailingNewlines(formatted);
+            endsWithNewlines = countTrailingNewlines(formatted);
           }
         case DefinitionListSegment():
           // Ensure blank line before definition list
@@ -92,19 +93,11 @@ class MarkdownFormatter {
           final dlContent = formatDefinitionList(segment.definitionList);
           buffer.write(dlContent);
           buffer.writeln();
-          endsWithNewlines = _countTrailingNewlines('$dlContent\n');
+          endsWithNewlines = countTrailingNewlines('$dlContent\n');
       }
     }
 
     return buffer.toString();
-  }
-
-  int _countTrailingNewlines(String text) {
-    var count = 0;
-    for (var i = text.length - 1; i >= 0 && text[i] == '\n'; i--) {
-      count++;
-    }
-    return count;
   }
 
   String _formatMarkdown(String markdown) {

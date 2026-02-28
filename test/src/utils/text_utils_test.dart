@@ -44,6 +44,28 @@ void main() {
     });
   });
 
+  group('countTrailingNewlines', () {
+    test('returns 0 for empty string', () {
+      expect(countTrailingNewlines(''), 0);
+    });
+
+    test('returns 0 for string without trailing newlines', () {
+      expect(countTrailingNewlines('hello'), 0);
+    });
+
+    test('returns 1 for single trailing newline', () {
+      expect(countTrailingNewlines('hello\n'), 1);
+    });
+
+    test('returns 2 for double trailing newlines', () {
+      expect(countTrailingNewlines('hello\n\n'), 2);
+    });
+
+    test('counts only trailing newlines', () {
+      expect(countTrailingNewlines('hello\nworld\n'), 1);
+    });
+  });
+
   group('ensureTrailingNewline', () {
     test('adds newline when missing', () {
       expect(ensureTrailingNewline('hello'), 'hello\n');

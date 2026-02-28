@@ -7,10 +7,8 @@ library;
 ///
 /// Ensures consistent spacing: `# Heading` (one space after #).
 String normalizeHeading(int level, String content) {
-  if (level < 1) level = 1;
-  if (level > 6) level = 6;
-
-  final prefix = '#' * level;
+  final clampedLevel = level.clamp(1, 6);
+  final prefix = '#' * clampedLevel;
   final trimmedContent = content.trim();
 
   if (trimmedContent.isEmpty) {

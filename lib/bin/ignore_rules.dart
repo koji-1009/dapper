@@ -1,3 +1,6 @@
+/// Gitignore-style file ignore rules.
+library;
+
 import 'dart:io';
 
 import 'package:glob/glob.dart';
@@ -103,6 +106,7 @@ class IgnoreRules {
 
     return IgnoreRules._(patterns, negations);
   }
+
   final List<IgnorePattern> _patterns;
   final Set<String> _negations;
 

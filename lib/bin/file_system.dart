@@ -1,3 +1,6 @@
+/// File system abstraction for testability.
+library;
+
 import 'dart:io' as io;
 
 /// Entry returned by [FileSystem.listDirectory].

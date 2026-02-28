@@ -1,6 +1,8 @@
+/// Command-line interface for the Dapper formatter.
+library;
+
 import 'dart:convert';
-import 'dart:io' as io show FileSystemEntityType;
-import 'dart:io' hide File, Directory, FileSystemEntity, FileSystemEntityType;
+import 'dart:io' hide File, Directory, FileSystemEntity;
 
 import 'package:args/args.dart';
 
@@ -166,9 +168,9 @@ class DapperCli {
   }
 
   FormatOptions _resolveOptions(ArgResults results) {
-    final configOptions = configLoader.loadFromDirectory(
-      fileSystem.currentDirectory,
-    );
+    final base =
+        configLoader.loadFromDirectory(fileSystem.currentDirectory) ??
+        FormatOptions.defaults;
 
     final cliPrintWidth = results.wasParsed('print-width')
         ? int.tryParse(results['print-width'] as String)
@@ -177,12 +179,7 @@ class DapperCli {
         ? _parseProseWrap(results['prose-wrap'] as String)
         : null;
 
-    return FormatOptions(
-      printWidth: cliPrintWidth ?? configOptions?.printWidth ?? 80,
-      tabWidth: configOptions?.tabWidth ?? 2,
-      proseWrap: cliProseWrap ?? configOptions?.proseWrap ?? ProseWrap.preserve,
-      ulStyle: configOptions?.ulStyle ?? UnorderedListStyle.asterisk,
-    );
+    return base.copyWith(printWidth: cliPrintWidth, proseWrap: cliProseWrap);
   }
 
   ProseWrap _parseProseWrap(String value) {
@@ -220,14 +217,14 @@ class DapperCli {
     final entityType = fileSystem.getType(path);
 
     return switch (entityType) {
-      io.FileSystemEntityType.notFound => _handleNotFound(path),
-      io.FileSystemEntityType.directory => _processDirectory(
+      FileSystemEntityType.notFound => _handleNotFound(path),
+      FileSystemEntityType.directory => _processDirectory(
         path,
         outputMode,
         options,
         parentRules: parentRules,
       ),
-      io.FileSystemEntityType.file => _processFile(path, outputMode, options),
+      FileSystemEntityType.file => _processFile(path, outputMode, options),
       _ => (status: ProcessResult.unchanged, totalFiles: 0, changedFiles: 0),
     };
   }

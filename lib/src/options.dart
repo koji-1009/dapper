@@ -10,6 +10,7 @@
 /// | `tabWidth`   | ✓        | ✓    |
 /// | `printWidth` | ✓        | ✗    |
 /// | `proseWrap`  | ✓        | ✗    |
+/// | `ulStyle`    | ✓        | ✗    |
 ///
 /// ## Example
 ///

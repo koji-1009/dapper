@@ -1,3 +1,35 @@
+## Next
+
+### Fixed
+
+* Fix `_parseOptionsMap` hardcoding default values instead of using `FormatOptions.defaults.copyWith()`.
+* Fix `num` variable shadowing built-in `num` type in ordered list formatting.
+* Fix stdout leaking into test output from `run_test.dart`.
+
+### Changed
+
+* Cache `RegExp` objects at module level in `text_utils.dart` and `yaml_formatter.dart` to avoid recompilation per call.
+* Use `Set` literal instead of `List` for inline tag lookup in `_isInline` and YAML reserved word check in `_needsQuoting`.
+* Simplify `dart:io` imports in `dapper_cli.dart` from two overlapping imports to a single `hide` clause.
+* Simplify `_resolveOptions` to use `FormatOptions.defaults.copyWith()`.
+* Remove dead methods: `_printListItem`, `_printTableSection`, `_printTableRow`, `_printTableCell`.
+* Consolidate table-related switch cases (`thead`, `tbody`, `tr`, `th`, `td`) into a single shared case.
+* Extract YAML reserved words to a top-level `const Set` for `_needsQuoting`.
+* Hide internal `basename` function from public API via `show` clause on `lib/bin.dart` export.
+* Clean up development comments and normalize code style (`var` for type-inferred locals).
+* Add `library;` declarations and doc comments to all `lib/bin/` files for consistency.
+* Add description line to `yaml_formatter.dart` library doc comment.
+* Add doc comments to `ExitCode`, `OutputMode`, and `ProcessResult` enum values.
+
+### Added
+
+* Add `countTrailingNewlines` to shared `text_utils.dart`, replacing duplicated implementations in markdown and YAML formatters.
+* Add `ulStyle` to Option Applicability table in `options.dart` doc comment.
+* Add `file_system.dart` to `AGENTS.md` architecture diagram.
+* Add tests for `ConfigLoader`: non-existent directory, camelCase options, `ul_style` shorthands, invalid config, missing dapper block, string integer parsing.
+* Add tests for `FormatOptions`: `ulStyle` defaults, `copyWith(ulStyle:)`, `UnorderedListStyle` enum, `toString` with `ulStyle`.
+* Add tests for `countTrailingNewlines` in `text_utils_test.dart`.
+
 ## 1.4.5
 
 ### Fixed

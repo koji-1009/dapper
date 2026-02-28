@@ -19,15 +19,17 @@ void main() {
     });
 
     test('sets exitCode to 0 on success', () {
-      run(['--help']);
+      // Suppress stdout to keep test output clean
+      IOOverrides.runZoned(() => run(['--help']), stdout: () => _NullStdout());
       expect(exitCode, 0);
     });
 
     test('sets exitCode to 1 on error', () {
-      // Suppress stderr to keep test output clean
+      // Suppress stdout/stderr to keep test output clean
       runZonedGuarded(() {
         IOOverrides.runZoned(
           () => run(['nonexistent_file']),
+          stdout: () => _NullStdout(),
           stderr: () => _NullStdout(),
         );
       }, (error, stack) {});
@@ -37,10 +39,11 @@ void main() {
     test('sets exitCode to 1 on unhandled exception', () {
       const mockCli = _MockDapperCli();
 
-      // Suppress stderr
+      // Suppress stdout/stderr to keep test output clean
       runZonedGuarded(() {
         IOOverrides.runZoned(
           () => run(['throwing'], cli: mockCli),
+          stdout: () => _NullStdout(),
           stderr: () => _NullStdout(),
         );
       }, (error, stack) {});

@@ -57,7 +57,7 @@ class MarkdownPrinter {
       case 'ol':
         _printOrderedList(element);
       case 'li':
-        _printListItem(element);
+        _printListItemContent(element);
       case 'blockquote':
         _printBlockquote(element);
       case 'pre':
@@ -80,12 +80,10 @@ class MarkdownPrinter {
         _printTable(element);
       case 'thead':
       case 'tbody':
-        _printTableSection(element);
       case 'tr':
-        _printTableRow(element);
       case 'th':
       case 'td':
-        _printTableCell(element);
+        _printChildren(element);
       case 'dl':
         _printDefinitionList(element);
       case 'dt':
@@ -173,9 +171,9 @@ class MarkdownPrinter {
     final numWidth = maxNum.toString().length;
 
     for (var i = 0; i < items.length; i++) {
-      final num = (i + 1).toString().padLeft(numWidth);
+      final numStr = (i + 1).toString().padLeft(numWidth);
       _writeIndent();
-      _write('$num. ');
+      _write('$numStr. ');
       _currentIndent += numWidth + 2;
       _printListItemContent(items[i]);
       _currentIndent -= numWidth + 2;
@@ -183,10 +181,6 @@ class MarkdownPrinter {
     _listDepth--;
 
     _needsBlankLine = true;
-  }
-
-  void _printListItem(md.Element element) {
-    _printListItemContent(element);
   }
 
   void _printListItemContent(md.Element element) {
@@ -480,18 +474,6 @@ class MarkdownPrinter {
     _needsBlankLine = true;
   }
 
-  void _printTableSection(md.Element element) {
-    _printChildren(element);
-  }
-
-  void _printTableRow(md.Element element) {
-    _printChildren(element);
-  }
-
-  void _printTableCell(md.Element element) {
-    _printChildren(element);
-  }
-
   void _printDefinitionList(md.Element element) {
     _ensureBlankLine();
 
@@ -621,14 +603,14 @@ class MarkdownPrinter {
   bool _isInline(md.Node node) {
     if (node is md.Text) return true;
     if (node is md.Element) {
-      return const [
+      return const {
         'code',
         'em',
         'strong',
         'a',
         'img',
         'br',
-      ].contains(node.tag);
+      }.contains(node.tag);
     }
     return true;
   }

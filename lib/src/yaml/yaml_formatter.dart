@@ -1,11 +1,18 @@
 /// YAML formatter.
 ///
+/// Formats YAML documents with consistent indentation and style.
 library;
 
 import 'package:yaml/yaml.dart';
 
 import '../options.dart';
 import '../utils/text_utils.dart';
+
+// Cached regular expression for numeric detection.
+final _numPattern = RegExp(r'^[+-]?(\d+\.?\d*|\.\d+)([eE][+-]?\d+)?$');
+
+// YAML reserved words that require quoting when used as plain scalars.
+const _reservedWords = {'true', 'false', 'null', 'yes', 'no', 'on', 'off', '~'};
 
 /// Formats a YAML document according to the specified options.
 ///
@@ -121,7 +128,7 @@ class _YamlPrinter {
           final targetLevel = indentLevel ?? _indentLevel;
           final targetIndentWidth = targetLevel * options.tabWidth;
 
-          int effectiveLevel = targetLevel;
+          var effectiveLevel = targetLevel;
           if (originalIndentWidth < targetIndentWidth) {
             // Round down to nearest level
             effectiveLevel = (originalIndentWidth / options.tabWidth).round();
@@ -138,25 +145,13 @@ class _YamlPrinter {
         // maxBlankLines = 1 means we allow 1 blank line (which is 2 consecutive newlines)
         // \n\n ends with \n\n.
         final limit = maxBlankLines + 1;
-        final currentNewlines = _countTrailingNewlines(_buffer.toString());
+        final currentNewlines = countTrailingNewlines(_buffer.toString());
 
         if (currentNewlines < limit) {
           _newLine();
         }
       }
     }
-  }
-
-  int _countTrailingNewlines(String s) {
-    int count = 0;
-    for (int i = s.length - 1; i >= 0; i--) {
-      if (s[i] == '\n') {
-        count++;
-      } else {
-        break;
-      }
-    }
-    return count;
   }
 
   void _printNode(YamlNode node, {required bool inline}) {
@@ -170,7 +165,6 @@ class _YamlPrinter {
   }
 
   void _printMap(YamlMap map, {required bool inline}) {
-    // Note: map.isEmpty check is handled by caller logic flow usually, but good to check
     if (map.isEmpty) {
       _write('{}');
       _lastOffset = map.span.end.offset;
@@ -180,8 +174,8 @@ class _YamlPrinter {
     // Keys are sorted by their appearance in the source to preserve order
     final sortedKeys = map.nodes.keys.toList()
       ..sort(
-        (a, b) => map.nodes[a]!.span.start.offset.compareTo(
-          map.nodes[b]!.span.start.offset,
+        (a, b) => (a as YamlNode).span.start.offset.compareTo(
+          (b as YamlNode).span.start.offset,
         ),
       );
 
@@ -279,8 +273,7 @@ class _YamlPrinter {
 
     var isFirst = true;
     for (final node in list.nodes) {
-      // Gap before item
-      // TRIM FIX: Trim leading newlines for first item
+      // Gap before item (trim leading newlines for first item)
       _printGap(
         _lastOffset,
         node.span.start.offset,
@@ -337,7 +330,7 @@ class _YamlPrinter {
     final scalar = node as YamlScalar;
     final value = scalar.value;
 
-    // Only quote strings. Primitives (null, bool, num) should differ to their string representation
+    // Only quote strings. Primitives (null, bool, num) defer to their string representation
     if (value is! String) {
       _write(value == null ? 'null' : value.toString());
       return;
@@ -346,11 +339,10 @@ class _YamlPrinter {
     String text;
     if (scalar.style == ScalarStyle.SINGLE_QUOTED) {
       // Escape single quotes by doubling them
-      text = "'${value.toString().replaceAll("'", "''")}'";
+      text = "'${value.replaceAll("'", "''")}'";
     } else if (scalar.style == ScalarStyle.DOUBLE_QUOTED) {
       // Escape backslashes and double quotes
       final encoded = value
-          .toString()
           .replaceAll(r'\', r'\\')
           .replaceAll('"', r'\"')
           .replaceAll('\n', r'\n')
@@ -360,13 +352,13 @@ class _YamlPrinter {
           .replaceAll('\f', r'\f');
       text = '"$encoded"';
     } else if (scalar.style == ScalarStyle.LITERAL) {
-      _printBlockScalar(value.toString(), '|');
+      _printBlockScalar(value, '|');
       return;
     } else if (scalar.style == ScalarStyle.FOLDED) {
-      _printBlockScalar(value.toString(), '>');
+      _printBlockScalar(value, '>');
       return;
     } else {
-      text = value.toString();
+      text = value;
       if (_needsQuoting(text)) {
         text =
             '"${text.replaceAll(r'\', r'\\').replaceAll('"', r'\"').replaceAll('\n', r'\n')}"';
@@ -429,15 +421,7 @@ class _YamlPrinter {
     }
 
     // Could be interpreted as boolean, null, or number
-    final lower = value.toLowerCase();
-    if (lower == 'true' ||
-        lower == 'false' ||
-        lower == 'null' ||
-        lower == 'yes' ||
-        lower == 'no' ||
-        lower == 'on' ||
-        lower == 'off' ||
-        lower == '~') {
+    if (_reservedWords.contains(value.toLowerCase())) {
       return true;
     }
 
@@ -456,8 +440,7 @@ class _YamlPrinter {
 
   bool _looksNumeric(String value) {
     if (value.isEmpty) return false;
-    final numPattern = RegExp(r'^[+-]?(\d+\.?\d*|\.\d+)([eE][+-]?\d+)?$');
-    return numPattern.hasMatch(value);
+    return _numPattern.hasMatch(value);
   }
 
   void _write(String text) {

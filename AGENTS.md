@@ -28,6 +28,7 @@ dapper/
 │       ├── config_loader.dart
 │       ├── dapper_cli.dart
 │       ├── exit_code.dart
+│       ├── file_system.dart
 │       ├── ignore_rules.dart
 │       ├── output_mode.dart
 │       └── process_result.dart
@@ -88,6 +89,12 @@ When users request these features, explain the design decision.
 ### Common Commands
 
 ```bash
+# Format Dart code
+dart format .
+
+# Format Markdown and YAML (self-hosting)
+dart run dapper .
+
 # Run all tests
 dart test
 
@@ -98,6 +105,7 @@ dart test --coverage=coverage
 dart analyze
 
 # Format check (CI)
+dart format --set-exit-if-changed .
 dart run dapper -o none --set-exit-if-changed .
 
 # Build web demo

@@ -3,6 +3,7 @@
    ============================================ */
 
 :root {
+  color-scheme: dark;
   --bg-primary: #0d1117;
   --bg-secondary: #161b22;
   --bg-tertiary: #21262d;
@@ -198,6 +199,7 @@ main {
 .sample-buttons {
   display: flex;
   gap: 0.5rem;
+  flex-wrap: wrap;
 }
 
 .sample-btn {
@@ -253,6 +255,7 @@ textarea {
 
 textarea:focus {
   outline: none;
+  box-shadow: inset 0 0 0 2px var(--accent);
 }
 
 textarea::placeholder {
@@ -344,6 +347,10 @@ footer a:hover {
 
   #formatBtn:hover {
     transform: rotate(90deg) scale(1.1);
+  }
+
+  #formatBtn:active {
+    transform: rotate(90deg) scale(0.95);
   }
 
   .options {

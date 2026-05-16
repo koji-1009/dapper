@@ -71,8 +71,7 @@ class _YamlPrinter {
   int _indentLevel = 0;
   int _lastOffset = 0;
 
-  bool get _atLineStart =>
-      _buffer.isEmpty || _buffer.toString().endsWith('\n');
+  bool get _atLineStart => _buffer.isEmpty || _buffer.toString().endsWith('\n');
 
   bool get _endsWithSpace => _buffer.toString().endsWith(' ');
 

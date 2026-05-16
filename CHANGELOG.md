@@ -1,3 +1,20 @@
+## 1.4.7
+
+### Fixed
+
+* Fix `parseDocumentSegments` allowing a single blank line between definitions only for the first term; the same rule now applies to every term so definition lists with blank-separated entries on later terms are parsed consistently.
+
+### Changed
+
+* Extract `_collectDefinitions` helper in `definition_list.dart` to consolidate the two near-duplicate definition-collection loops in `parseDocumentSegments`.
+* Extract `_writeWrappedListItemLine` helper in `ast_printer.dart` so the inline-only and block-mixed paths of `_printListItemContent` share a single prose-wrap output policy.
+* Split `_printTable` in `ast_printer.dart` into `_collectTableRows`, `_collectTableRowCells`, `_computeColumnWidths`, and `_writeTableSeparator` so the top-level body reads as a collect / measure / print pipeline.
+* Introduce `_atLineStart` and `_endsWithSpace` getters in `_YamlPrinter` to name the recurring buffer-state checks that previously appeared inline as `_buffer.toString().endsWith(...)`.
+
+### Added
+
+* Add stronger edge-case tests for `parseDocumentSegments` that verify the collected terms and definitions (including blank lines between definitions of later terms), replacing the prior `length >= 1` smoke checks.
+
 ## 1.4.6
 
 ### Fixed

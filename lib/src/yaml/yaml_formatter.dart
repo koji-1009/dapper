@@ -71,6 +71,10 @@ class _YamlPrinter {
   int _indentLevel = 0;
   int _lastOffset = 0;
 
+  bool get _atLineStart => _buffer.isEmpty || _buffer.toString().endsWith('\n');
+
+  bool get _endsWithSpace => _buffer.toString().endsWith(' ');
+
   String print(YamlNode node) {
     _buffer.clear();
     _lastOffset = 0;
@@ -194,7 +198,7 @@ class _YamlPrinter {
       if (i > 0 || !inline) {
         if (!inline && _buffer.isEmpty) {
           // Don't add newline at the very beginning of the file/buffer
-        } else if (!_buffer.toString().endsWith('\n')) {
+        } else if (!_atLineStart) {
           _newLine();
         }
         if (!inline && _buffer.isNotEmpty) {
@@ -204,7 +208,7 @@ class _YamlPrinter {
         }
       } else if (inline && i == 0) {
         // Key follows something on same line (e.g. "- key:")
-        if (_buffer.toString().endsWith('\n')) {
+        if (_atLineStart) {
           _writeIndent();
         }
       }
@@ -239,14 +243,13 @@ class _YamlPrinter {
         // Implicit null, do nothing
         _lastOffset = valueNode.span.end.offset;
       } else if (isScalarOrEmpty) {
-        if (!_buffer.toString().endsWith(' ') &&
-            !_buffer.toString().endsWith('\n')) {
+        if (!_endsWithSpace && !_atLineStart) {
           _write(' ');
         }
         _printNode(valueNode, inline: true);
         _lastOffset = valueNode.span.end.offset;
       } else {
-        if (!_buffer.toString().endsWith('\n')) {
+        if (!_atLineStart) {
           _newLine();
         }
         _indentLevel++;

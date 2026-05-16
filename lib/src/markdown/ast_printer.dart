@@ -399,47 +399,15 @@ class MarkdownPrinter {
   void _printTable(md.Element element) {
     _ensureBlankLine();
 
-    // Collect all rows to calculate column widths
-    final rows = <List<String>>[];
-    final alignments = <String?>[];
-
-    for (final section in element.children ?? <md.Node>[]) {
-      if (section is md.Element) {
-        for (final row in section.children ?? <md.Node>[]) {
-          if (row is md.Element && row.tag == 'tr') {
-            final cells = <String>[];
-            for (final cell in row.children ?? <md.Node>[]) {
-              if (cell is md.Element &&
-                  (cell.tag == 'th' || cell.tag == 'td')) {
-                cells.add(_renderInlineContent(cell).trim());
-
-                if (cell.tag == 'th' && alignments.length < cells.length) {
-                  alignments.add(cell.attributes['align']);
-                }
-              }
-            }
-            rows.add(cells);
-          }
-        }
-      }
-    }
+    final collected = _collectTableRows(element);
+    final rows = collected.rows;
+    final alignments = collected.alignments;
 
     if (rows.isEmpty) return;
 
-    // Calculate column widths
-    final columnCount = rows
-        .map((r) => r.length)
-        .reduce((a, b) => a > b ? a : b);
-    final columnWidths = List<int>.filled(columnCount, 3); // Minimum width of 3
-    for (final row in rows) {
-      for (var i = 0; i < row.length; i++) {
-        if (row[i].length > columnWidths[i]) {
-          columnWidths[i] = row[i].length;
-        }
-      }
-    }
+    final columnWidths = _computeColumnWidths(rows);
+    final columnCount = columnWidths.length;
 
-    // Print table
     for (var rowIndex = 0; rowIndex < rows.length; rowIndex++) {
       final row = rows[rowIndex];
       _writeIndent();
@@ -450,28 +418,82 @@ class MarkdownPrinter {
       }
       _newLine();
 
-      // Print separator after header
       if (rowIndex == 0) {
-        _writeIndent();
-        _write('|');
-        for (var i = 0; i < columnCount; i++) {
-          final align = i < alignments.length ? alignments[i] : null;
-          final dashes = '-' * columnWidths[i];
-          if (align == 'center') {
-            _write(':$dashes:|');
-          } else if (align == 'right') {
-            _write(' $dashes:|');
-          } else if (align == 'left') {
-            _write(':$dashes |');
-          } else {
-            _write(' $dashes |');
-          }
-        }
-        _newLine();
+        _writeTableSeparator(columnWidths, alignments);
       }
     }
 
     _needsBlankLine = true;
+  }
+
+  ({List<List<String>> rows, List<String?> alignments}) _collectTableRows(
+    md.Element element,
+  ) {
+    final rows = <List<String>>[];
+    final alignments = <String?>[];
+
+    for (final section in element.children ?? <md.Node>[]) {
+      if (section is! md.Element) continue;
+      for (final row in section.children ?? <md.Node>[]) {
+        if (row is! md.Element || row.tag != 'tr') continue;
+        rows.add(_collectTableRowCells(row, alignments));
+      }
+    }
+
+    return (rows: rows, alignments: alignments);
+  }
+
+  List<String> _collectTableRowCells(
+    md.Element row,
+    List<String?> alignments,
+  ) {
+    final cells = <String>[];
+    for (final cell in row.children ?? <md.Node>[]) {
+      if (cell is! md.Element) continue;
+      if (cell.tag != 'th' && cell.tag != 'td') continue;
+      cells.add(_renderInlineContent(cell).trim());
+      if (cell.tag == 'th' && alignments.length < cells.length) {
+        alignments.add(cell.attributes['align']);
+      }
+    }
+    return cells;
+  }
+
+  List<int> _computeColumnWidths(List<List<String>> rows) {
+    final columnCount = rows
+        .map((r) => r.length)
+        .reduce((a, b) => a > b ? a : b);
+    final columnWidths = List<int>.filled(columnCount, 3);
+    for (final row in rows) {
+      for (var i = 0; i < row.length; i++) {
+        if (row[i].length > columnWidths[i]) {
+          columnWidths[i] = row[i].length;
+        }
+      }
+    }
+    return columnWidths;
+  }
+
+  void _writeTableSeparator(
+    List<int> columnWidths,
+    List<String?> alignments,
+  ) {
+    _writeIndent();
+    _write('|');
+    for (var i = 0; i < columnWidths.length; i++) {
+      final align = i < alignments.length ? alignments[i] : null;
+      final dashes = '-' * columnWidths[i];
+      if (align == 'center') {
+        _write(':$dashes:|');
+      } else if (align == 'right') {
+        _write(' $dashes:|');
+      } else if (align == 'left') {
+        _write(':$dashes |');
+      } else {
+        _write(' $dashes |');
+      }
+    }
+    _newLine();
   }
 
   void _printDefinitionList(md.Element element) {

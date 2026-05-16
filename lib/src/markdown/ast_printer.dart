@@ -443,10 +443,7 @@ class MarkdownPrinter {
     return (rows: rows, alignments: alignments);
   }
 
-  List<String> _collectTableRowCells(
-    md.Element row,
-    List<String?> alignments,
-  ) {
+  List<String> _collectTableRowCells(md.Element row, List<String?> alignments) {
     final cells = <String>[];
     for (final cell in row.children ?? <md.Node>[]) {
       if (cell is! md.Element) continue;
@@ -474,10 +471,7 @@ class MarkdownPrinter {
     return columnWidths;
   }
 
-  void _writeTableSeparator(
-    List<int> columnWidths,
-    List<String?> alignments,
-  ) {
+  void _writeTableSeparator(List<int> columnWidths, List<String?> alignments) {
     _writeIndent();
     _write('|');
     for (var i = 0; i < columnWidths.length; i++) {

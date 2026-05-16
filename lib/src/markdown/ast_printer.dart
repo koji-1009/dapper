@@ -203,23 +203,12 @@ class MarkdownPrinter {
     // Simple case: inline content only
     if (children.every(_isInline)) {
       final content = children.map(_renderInlineNode).join();
-      if (options.proseWrap == ProseWrap.always) {
-        final lines = wrapText(
-          normalizeWhitespace(content),
-          options.printWidth - _currentIndent - prefix.length,
-        );
-        _write('$prefix${lines.first}');
-        _newLine();
-        for (var i = 1; i < lines.length; i++) {
-          _writeIndent();
-          if (prefix.isNotEmpty) {
-            _write(' ' * prefix.length); // Indent for checkbox
-          }
-          _writeLine(lines[i]);
-        }
-      } else {
-        _writeLine('$prefix${content.trim()}');
-      }
+      _writeWrappedListItemLine(
+        wrapInput: content,
+        firstLinePrefix: prefix,
+        noWrapLine: '$prefix${content.trim()}',
+        continuationPad: prefix.length,
+      );
       return;
     }
 
@@ -251,26 +240,14 @@ class MarkdownPrinter {
       }
     }
 
-    // Write inline content first
     final inlineText = inlineContent.toString().trim();
     if (inlineText.isNotEmpty) {
-      if (options.proseWrap == ProseWrap.always) {
-        final lines = wrapText(
-          normalizeWhitespace(inlineText),
-          options.printWidth - _currentIndent - prefix.length,
-        );
-        _write(lines.first);
-        _newLine();
-        for (var i = 1; i < lines.length; i++) {
-          _writeIndent();
-          if (prefix.isNotEmpty) {
-            _write(' ' * prefix.length); // Indent for checkbox
-          }
-          _writeLine(lines[i]);
-        }
-      } else {
-        _writeLine(inlineText);
-      }
+      _writeWrappedListItemLine(
+        wrapInput: inlineText,
+        firstLinePrefix: '',
+        noWrapLine: inlineText,
+        continuationPad: prefix.length,
+      );
     } else {
       // Checkbox with no inline text, just output newline
       _newLine();
@@ -284,6 +261,40 @@ class MarkdownPrinter {
       if (!_isInline(child)) {
         _printNode(child);
       }
+    }
+  }
+
+  /// Writes the leading line of a list item, respecting prose-wrap.
+  ///
+  /// On wrap, [wrapInput] is normalized and wrapped to fit the remaining width
+  /// after [continuationPad]; [firstLinePrefix] is emitted before the wrapped
+  /// first line and continuation lines are aligned by the current indent plus
+  /// a [continuationPad]-wide space padding (so wrapped text sits under the
+  /// content, not the bullet/checkbox). When wrapping is disabled, [noWrapLine]
+  /// is written as-is.
+  void _writeWrappedListItemLine({
+    required String wrapInput,
+    required String firstLinePrefix,
+    required String noWrapLine,
+    required int continuationPad,
+  }) {
+    if (options.proseWrap != ProseWrap.always) {
+      _writeLine(noWrapLine);
+      return;
+    }
+
+    final lines = wrapText(
+      normalizeWhitespace(wrapInput),
+      options.printWidth - _currentIndent - continuationPad,
+    );
+    _write('$firstLinePrefix${lines.first}');
+    _newLine();
+    for (var i = 1; i < lines.length; i++) {
+      _writeIndent();
+      if (continuationPad > 0) {
+        _write(' ' * continuationPad);
+      }
+      _writeLine(lines[i]);
     }
   }
 

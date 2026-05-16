@@ -93,20 +93,21 @@ Regular paragraph''';
   });
 
   group('parseDocumentSegments edge cases', () {
-    test('absorbs a single blank line between definitions of the first term',
-        () {
-      const input = '''Term
+    test(
+      'absorbs a single blank line between definitions of the first term',
+      () {
+        const input = '''Term
 : Def 1
 
 : Def 2''';
-      final segments = parseDocumentSegments(input);
-      expect(segments, hasLength(1));
-      final items = (segments.single as DefinitionListSegment)
-          .definitionList
-          .items;
-      expect(items, hasLength(1));
-      expect(items.single.definitions, ['Def 1', 'Def 2']);
-    });
+        final segments = parseDocumentSegments(input);
+        expect(segments, hasLength(1));
+        final items =
+            (segments.single as DefinitionListSegment).definitionList.items;
+        expect(items, hasLength(1));
+        expect(items.single.definitions, ['Def 1', 'Def 2']);
+      },
+    );
 
     test('absorbs a single blank line between definitions of later terms', () {
       const input = '''Term1
@@ -118,9 +119,8 @@ Term2
 : Def2b''';
       final segments = parseDocumentSegments(input);
       expect(segments, hasLength(1));
-      final items = (segments.single as DefinitionListSegment)
-          .definitionList
-          .items;
+      final items =
+          (segments.single as DefinitionListSegment).definitionList.items;
       expect(items.map((it) => it.term), ['Term1', 'Term2']);
       expect(items[0].definitions, ['Def1']);
       expect(items[1].definitions, ['Def2a', 'Def2b']);
@@ -134,9 +134,8 @@ Term2
 : Def2''';
       final segments = parseDocumentSegments(input);
       expect(segments, hasLength(1));
-      final items = (segments.single as DefinitionListSegment)
-          .definitionList
-          .items;
+      final items =
+          (segments.single as DefinitionListSegment).definitionList.items;
       expect(items.map((it) => it.term), ['Term1', 'Term2']);
       expect(items[0].definitions, ['Def1']);
       expect(items[1].definitions, ['Def2']);

@@ -63,70 +63,32 @@ List<DocumentSegment> parseDocumentSegments(String markdown) {
   while (i < lines.length) {
     final line = lines[i];
 
-    // Check if this could be a term (non-empty, not starting with special chars)
     if (_isPotentialTerm(line) && i + 1 < lines.length) {
-      // Look ahead for definitions
-      var j = i + 1;
-      final definitions = <String>[];
+      final firstDefs = _collectDefinitions(lines, i + 1);
 
-      while (j < lines.length) {
-        final nextLine = lines[j];
-        final match = _definitionMatch(nextLine);
-        if (match != null) {
-          definitions.add(match);
-          j++;
-        } else if (nextLine.trim().isEmpty && j + 1 < lines.length) {
-          // Allow one blank line between definitions
-          final afterBlank = lines[j + 1];
-          if (_definitionMatch(afterBlank) != null) {
-            j++;
-          } else {
-            break;
-          }
-        } else {
-          break;
-        }
-      }
-
-      if (definitions.isNotEmpty) {
-        // This is a definition list, flush markdown buffer first
+      if (firstDefs.definitions.isNotEmpty) {
         flushMarkdown();
 
-        // Collect all consecutive definition items
         final items = <DefinitionItem>[
-          DefinitionItem(line.trim(), definitions),
+          DefinitionItem(line.trim(), firstDefs.definitions),
         ];
+        var j = firstDefs.nextIndex;
 
-        // Continue looking for more items
+        // Continue collecting subsequent term/definition pairs.
         while (j < lines.length) {
-          // Skip blank lines
           while (j < lines.length && lines[j].trim().isEmpty) {
             j++;
           }
-
           if (j >= lines.length) break;
 
           final nextTerm = lines[j];
-          if (_isPotentialTerm(nextTerm) && j + 1 < lines.length) {
-            final nextDefs = <String>[];
-            var k = j + 1;
-            while (k < lines.length) {
-              final defLine = lines[k];
-              final match = _definitionMatch(defLine);
-              if (match != null) {
-                nextDefs.add(match);
-                k++;
-              } else {
-                break;
-              }
-            }
-            if (nextDefs.isNotEmpty) {
-              items.add(DefinitionItem(nextTerm.trim(), nextDefs));
-              j = k;
-              continue;
-            }
-          }
-          break;
+          if (!_isPotentialTerm(nextTerm) || j + 1 >= lines.length) break;
+
+          final nextDefs = _collectDefinitions(lines, j + 1);
+          if (nextDefs.definitions.isEmpty) break;
+
+          items.add(DefinitionItem(nextTerm.trim(), nextDefs.definitions));
+          j = nextDefs.nextIndex;
         }
 
         segments.add(DefinitionListSegment(DefinitionList(items)));
@@ -141,6 +103,32 @@ List<DocumentSegment> parseDocumentSegments(String markdown) {
 
   flushMarkdown();
   return segments;
+}
+
+/// Collects consecutive `: definition` lines starting at [fromIndex],
+/// tolerating a single blank line between definitions.
+({List<String> definitions, int nextIndex}) _collectDefinitions(
+  List<String> lines,
+  int fromIndex,
+) {
+  final definitions = <String>[];
+  var j = fromIndex;
+  while (j < lines.length) {
+    final match = _definitionMatch(lines[j]);
+    if (match != null) {
+      definitions.add(match);
+      j++;
+      continue;
+    }
+    if (lines[j].trim().isEmpty &&
+        j + 1 < lines.length &&
+        _definitionMatch(lines[j + 1]) != null) {
+      j++;
+      continue;
+    }
+    break;
+  }
+  return (definitions: definitions, nextIndex: j);
 }
 
 bool _isPotentialTerm(String line) {

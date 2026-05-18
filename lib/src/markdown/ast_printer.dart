@@ -63,15 +63,11 @@ class MarkdownPrinter {
       case 'pre':
         _printCodeBlock(element);
       case 'code':
-        _printInlineCode(element);
       case 'em':
-        _printEmphasis(element);
       case 'strong':
-        _printStrong(element);
       case 'a':
-        _printLink(element);
       case 'img':
-        _printImage(element);
+        _write(_renderInlineNode(element));
       case 'hr':
         _printHorizontalRule();
       case 'br':
@@ -355,47 +351,6 @@ class MarkdownPrinter {
     _needsBlankLine = true;
   }
 
-  void _printInlineCode(md.Element element) {
-    final content = _getTextContent(element);
-    _write('`$content`');
-  }
-
-  void _printEmphasis(md.Element element) {
-    final content = _renderInlineContent(element);
-    _write('_${content}_');
-  }
-
-  void _printStrong(md.Element element) {
-    final content = _renderInlineContent(element);
-    _write('**$content**');
-  }
-
-  void _printLink(md.Element element) {
-    final href = element.attributes['href'] ?? '';
-    final title = element.attributes['title'];
-    final content = _renderInlineContent(element);
-
-    _write('[$content]');
-    if (title != null) {
-      _write('($href "$title")');
-    } else {
-      _write('($href)');
-    }
-  }
-
-  void _printImage(md.Element element) {
-    final src = element.attributes['src'] ?? '';
-    final alt = element.attributes['alt'] ?? '';
-    final title = element.attributes['title'];
-
-    _write('![$alt]');
-    if (title != null) {
-      _write('($src "$title")');
-    } else {
-      _write('($src)');
-    }
-  }
-
   void _printHorizontalRule() {
     _ensureBlankLine();
     _writeLine('---');
@@ -600,21 +555,17 @@ class MarkdownPrinter {
         case 'strong':
           return '**${_renderInlineContent(node)}**';
         case 'a':
-          final href = node.attributes['href'] ?? '';
-          final title = node.attributes['title'];
-          final content = _renderInlineContent(node);
-          if (title != null) {
-            return '[$content]($href "$title")';
-          }
-          return '[$content]($href)';
+          return _renderLinkLike(
+            '[${_renderInlineContent(node)}]',
+            node.attributes['href'] ?? '',
+            node.attributes['title'],
+          );
         case 'img':
-          final src = node.attributes['src'] ?? '';
-          final alt = node.attributes['alt'] ?? '';
-          final title = node.attributes['title'];
-          if (title != null) {
-            return '![$alt]($src "$title")';
-          }
-          return '![$alt]($src)';
+          return _renderLinkLike(
+            '![${node.attributes['alt'] ?? ''}]',
+            node.attributes['src'] ?? '',
+            node.attributes['title'],
+          );
         case 'br':
           return '  \n';
         default:
@@ -625,6 +576,10 @@ class MarkdownPrinter {
       return node.textContent;
     }
     return '';
+  }
+
+  String _renderLinkLike(String prefix, String url, String? title) {
+    return title != null ? '$prefix($url "$title")' : '$prefix($url)';
   }
 
   bool _isInline(md.Node node) {

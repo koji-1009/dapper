@@ -175,96 +175,86 @@ class _YamlPrinter {
       return;
     }
 
-    // Keys are sorted by their appearance in the source to preserve order
-    final sortedKeys = map.nodes.keys.toList()
-      ..sort(
-        (a, b) => (a as YamlNode).span.start.offset.compareTo(
-          (b as YamlNode).span.start.offset,
-        ),
-      );
+    // Keys are sorted by their appearance in the source to preserve order.
+    final sortedKeys = map.nodes.keys.cast<YamlNode>().toList()
+      ..sort((a, b) => a.span.start.offset.compareTo(b.span.start.offset));
 
     for (var i = 0; i < sortedKeys.length; i++) {
-      final key = sortedKeys[i];
-      final keyNode = key as YamlNode;
-      final valueNode = map.nodes[key]!;
+      final keyNode = sortedKeys[i];
+      final valueNode = map.nodes[keyNode]!;
 
-      // Handle comments between keys, trimming leading newlines for the first key
       _printGap(
         _lastOffset,
         keyNode.span.start.offset,
         trimLeadingNewlines: i == 0,
       );
 
-      if (i > 0 || !inline) {
-        if (!inline && _buffer.isEmpty) {
-          // Don't add newline at the very beginning of the file/buffer
-        } else if (!_atLineStart) {
-          _newLine();
-        }
-        if (!inline && _buffer.isNotEmpty) {
-          _writeIndent();
-        } else if (inline) {
-          _writeIndent();
-        }
-      } else if (inline && i == 0) {
-        // Key follows something on same line (e.g. "- key:")
-        if (_atLineStart) {
-          _writeIndent();
-        }
-      }
-
-      final keyText = keyNode.toString();
-      _write('$keyText:');
-
+      _positionMapKey(isFirst: i == 0, inline: inline);
+      _write('${keyNode.toString()}:');
       _lastOffset = keyNode.span.end.offset;
 
-      // Determine indent level for comments between key and value
-      final isScalarOrEmpty =
-          _isScalar(valueNode) ||
-          (valueNode is YamlMap && valueNode.isEmpty) ||
-          (valueNode is YamlList && valueNode.isEmpty);
-
-      final gapIndent = isScalarOrEmpty ? null : _indentLevel + 1;
-
-      // Rule: Reduce blank lines to 0 between a structured key and its first child
-      // if it's a block value.
-      final maxBlankLines = isScalarOrEmpty ? 1 : 0;
-
+      final inlineValue = _isInlineMapValue(valueNode);
       _printGap(
         _lastOffset,
         valueNode.span.start.offset,
-        indentLevel: gapIndent,
-        maxBlankLines: maxBlankLines,
+        indentLevel: inlineValue ? null : _indentLevel + 1,
+        // Reduce blank lines to 0 between a structured key and its first child
+        // when the value is a block.
+        maxBlankLines: inlineValue ? 1 : 0,
       );
       _lastOffset = valueNode.span.start.offset;
-
-      // Ensure we don't print "null" for implicit null values
-      if (valueNode.span.length == 0 && valueNode.value == null) {
-        // Implicit null, do nothing
-        _lastOffset = valueNode.span.end.offset;
-      } else if (isScalarOrEmpty) {
-        if (!_endsWithSpace && !_atLineStart) {
-          _write(' ');
-        }
-        _printNode(valueNode, inline: true);
-        _lastOffset = valueNode.span.end.offset;
-      } else {
-        if (!_atLineStart) {
-          _newLine();
-        }
-        _indentLevel++;
-        _printNode(valueNode, inline: false);
-        _indentLevel--;
-        // Map/List printing updates _lastOffset internally (including trailing gaps).
-        // Do not overwrite _lastOffset here.
-      }
+      _writeMapValue(valueNode, inlineValue: inlineValue);
     }
 
-    // Process trailing comments/content belonging to this map but after the last value
     if (_lastOffset < map.span.end.offset) {
       _printGap(_lastOffset, map.span.end.offset, indentLevel: _indentLevel);
       _lastOffset = map.span.end.offset;
     }
+  }
+
+  void _positionMapKey({required bool isFirst, required bool inline}) {
+    // Very first thing in the buffer: nothing precedes us.
+    if (isFirst && !inline && _buffer.isEmpty) return;
+
+    // First key of an inline map (e.g. "- key:" in a list-of-maps): the parent
+    // already positioned us after the dash; only indent if we're at line start.
+    if (isFirst && inline) {
+      if (_atLineStart) _writeIndent();
+      return;
+    }
+
+    if (!_atLineStart) _newLine();
+    _writeIndent();
+  }
+
+  bool _isInlineMapValue(YamlNode node) {
+    return _isScalar(node) ||
+        (node is YamlMap && node.isEmpty) ||
+        (node is YamlList && node.isEmpty);
+  }
+
+  void _writeMapValue(YamlNode valueNode, {required bool inlineValue}) {
+    // Implicit null: don't print "null".
+    if (valueNode.span.length == 0 && valueNode.value == null) {
+      _lastOffset = valueNode.span.end.offset;
+      return;
+    }
+
+    if (inlineValue) {
+      if (!_endsWithSpace && !_atLineStart) {
+        _write(' ');
+      }
+      _printNode(valueNode, inline: true);
+      _lastOffset = valueNode.span.end.offset;
+      return;
+    }
+
+    // Block value. _printNode (Map/List) updates _lastOffset internally
+    // including trailing gaps — do not overwrite here.
+    if (!_atLineStart) _newLine();
+    _indentLevel++;
+    _printNode(valueNode, inline: false);
+    _indentLevel--;
   }
 
   void _printList(YamlList list) {

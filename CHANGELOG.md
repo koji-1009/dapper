@@ -1,3 +1,13 @@
+## Unreleased
+
+### Changed
+
+* Remove duplicated inline-print methods (`_printInlineCode`, `_printEmphasis`, `_printStrong`, `_printLink`, `_printImage`) in `ast_printer.dart` and collapse the matching `_printElement` cases (`code` / `em` / `strong` / `a` / `img`) into a single arm that shares `_renderInlineNode`'s output.
+* Extract `_renderLinkLike` helper in `ast_printer.dart` so the `'a'` and `'img'` cases of `_renderInlineNode` share the title-vs-no-title spelling instead of duplicating the three-line ternary.
+* Decompose `_printMap` in `yaml_formatter.dart` into `_positionMapKey`, `_isInlineMapValue`, and `_writeMapValue` so the previously nested key-positioning conditional reads as three named cases and value emission lives in a single helper.
+* Extract `_writeGapComment` helper in `yaml_formatter.dart` to separate per-line comment formatting (inline-with-previous vs. indent-rounded standalone) from the gap-line iteration in `_printGap`.
+* Extract `_tryParseDefinitionListAt` in `definition_list.dart` so `parseDocumentSegments` orchestrates segment dispatch while definition-list parsing lives in a single-responsibility helper.
+
 ## 1.4.7
 
 ### Fixed

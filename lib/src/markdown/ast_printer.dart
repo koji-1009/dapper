@@ -63,15 +63,11 @@ class MarkdownPrinter {
       case 'pre':
         _printCodeBlock(element);
       case 'code':
-        _printInlineCode(element);
       case 'em':
-        _printEmphasis(element);
       case 'strong':
-        _printStrong(element);
       case 'a':
-        _printLink(element);
       case 'img':
-        _printImage(element);
+        _write(_renderInlineNode(element));
       case 'hr':
         _printHorizontalRule();
       case 'br':
@@ -353,47 +349,6 @@ class MarkdownPrinter {
     _writeLine('```');
 
     _needsBlankLine = true;
-  }
-
-  void _printInlineCode(md.Element element) {
-    final content = _getTextContent(element);
-    _write('`$content`');
-  }
-
-  void _printEmphasis(md.Element element) {
-    final content = _renderInlineContent(element);
-    _write('_${content}_');
-  }
-
-  void _printStrong(md.Element element) {
-    final content = _renderInlineContent(element);
-    _write('**$content**');
-  }
-
-  void _printLink(md.Element element) {
-    final href = element.attributes['href'] ?? '';
-    final title = element.attributes['title'];
-    final content = _renderInlineContent(element);
-
-    _write('[$content]');
-    if (title != null) {
-      _write('($href "$title")');
-    } else {
-      _write('($href)');
-    }
-  }
-
-  void _printImage(md.Element element) {
-    final src = element.attributes['src'] ?? '';
-    final alt = element.attributes['alt'] ?? '';
-    final title = element.attributes['title'];
-
-    _write('![$alt]');
-    if (title != null) {
-      _write('($src "$title")');
-    } else {
-      _write('($src)');
-    }
   }
 
   void _printHorizontalRule() {

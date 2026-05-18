@@ -555,21 +555,17 @@ class MarkdownPrinter {
         case 'strong':
           return '**${_renderInlineContent(node)}**';
         case 'a':
-          final href = node.attributes['href'] ?? '';
-          final title = node.attributes['title'];
-          final content = _renderInlineContent(node);
-          if (title != null) {
-            return '[$content]($href "$title")';
-          }
-          return '[$content]($href)';
+          return _renderLinkLike(
+            '[${_renderInlineContent(node)}]',
+            node.attributes['href'] ?? '',
+            node.attributes['title'],
+          );
         case 'img':
-          final src = node.attributes['src'] ?? '';
-          final alt = node.attributes['alt'] ?? '';
-          final title = node.attributes['title'];
-          if (title != null) {
-            return '![$alt]($src "$title")';
-          }
-          return '![$alt]($src)';
+          return _renderLinkLike(
+            '![${node.attributes['alt'] ?? ''}]',
+            node.attributes['src'] ?? '',
+            node.attributes['title'],
+          );
         case 'br':
           return '  \n';
         default:
@@ -580,6 +576,10 @@ class MarkdownPrinter {
       return node.textContent;
     }
     return '';
+  }
+
+  String _renderLinkLike(String prefix, String url, String? title) {
+    return title != null ? '$prefix($url "$title")' : '$prefix($url)';
   }
 
   bool _isInline(md.Node node) {

@@ -104,9 +104,8 @@ class _YamlPrinter {
   }) {
     if (start >= end) return;
     final gap = source.substring(start, end);
-
-    // Extract comments from the gap
     final lines = gap.split('\n');
+    final gapStartedWithNewline = gap.startsWith('\n');
 
     var trimming = trimLeadingNewlines;
 
@@ -118,44 +117,51 @@ class _YamlPrinter {
         trimming = false;
       }
 
-      // Check for comments
       final commentIndex = line.indexOf('#');
       if (commentIndex != -1) {
-        final comment = line.substring(commentIndex);
-
-        if (i == 0 && start > 0 && !gap.startsWith('\n')) {
-          _write(' $comment');
-        } else {
-          final originalIndentStr = line.substring(0, commentIndex);
-          final originalIndentWidth = originalIndentStr.length;
-
-          final targetLevel = indentLevel ?? _indentLevel;
-          final targetIndentWidth = targetLevel * options.tabWidth;
-
-          var effectiveLevel = targetLevel;
-          if (originalIndentWidth < targetIndentWidth) {
-            // Round down to nearest level
-            effectiveLevel = (originalIndentWidth / options.tabWidth).round();
-          }
-
-          _buffer.write(' ' * (effectiveLevel * options.tabWidth));
-          _write(comment);
-        }
+        _writeGapComment(
+          line: line,
+          commentIndex: commentIndex,
+          indentLevel: indentLevel,
+          isInlineWithPrevious: i == 0 && start > 0 && !gapStartedWithNewline,
+        );
       }
 
-      // Output newline if this is not the last segment
+      // Limit consecutive newlines based on maxBlankLines.
+      // maxBlankLines = 1 means we allow 1 blank line (2 consecutive newlines).
       if (i < lines.length - 1) {
-        // Limit consecutive newlines based on maxBlankLines
-        // maxBlankLines = 1 means we allow 1 blank line (which is 2 consecutive newlines)
-        // \n\n ends with \n\n.
         final limit = maxBlankLines + 1;
         final currentNewlines = countTrailingNewlines(_buffer.toString());
-
         if (currentNewlines < limit) {
           _newLine();
         }
       }
     }
+  }
+
+  void _writeGapComment({
+    required String line,
+    required int commentIndex,
+    required int? indentLevel,
+    required bool isInlineWithPrevious,
+  }) {
+    final comment = line.substring(commentIndex);
+
+    if (isInlineWithPrevious) {
+      _write(' $comment');
+      return;
+    }
+
+    final originalIndentWidth = commentIndex;
+    final targetLevel = indentLevel ?? _indentLevel;
+    final targetIndentWidth = targetLevel * options.tabWidth;
+
+    final effectiveLevel = originalIndentWidth < targetIndentWidth
+        ? (originalIndentWidth / options.tabWidth).round()
+        : targetLevel;
+
+    _buffer.write(' ' * (effectiveLevel * options.tabWidth));
+    _write(comment);
   }
 
   void _printNode(YamlNode node, {required bool inline}) {

@@ -61,48 +61,58 @@ List<DocumentSegment> parseDocumentSegments(String markdown) {
   }
 
   while (i < lines.length) {
-    final line = lines[i];
-
-    if (_isPotentialTerm(line) && i + 1 < lines.length) {
-      final firstDefs = _collectDefinitions(lines, i + 1);
-
-      if (firstDefs.definitions.isNotEmpty) {
-        flushMarkdown();
-
-        final items = <DefinitionItem>[
-          DefinitionItem(line.trim(), firstDefs.definitions),
-        ];
-        var j = firstDefs.nextIndex;
-
-        // Continue collecting subsequent term/definition pairs.
-        while (j < lines.length) {
-          while (j < lines.length && lines[j].trim().isEmpty) {
-            j++;
-          }
-          if (j >= lines.length) break;
-
-          final nextTerm = lines[j];
-          if (!_isPotentialTerm(nextTerm) || j + 1 >= lines.length) break;
-
-          final nextDefs = _collectDefinitions(lines, j + 1);
-          if (nextDefs.definitions.isEmpty) break;
-
-          items.add(DefinitionItem(nextTerm.trim(), nextDefs.definitions));
-          j = nextDefs.nextIndex;
-        }
-
-        segments.add(DefinitionListSegment(DefinitionList(items)));
-        i = j;
-        continue;
-      }
+    final parsed = _tryParseDefinitionListAt(lines, i);
+    if (parsed != null) {
+      flushMarkdown();
+      segments.add(DefinitionListSegment(parsed.list));
+      i = parsed.nextIndex;
+      continue;
     }
-
-    markdownBuffer.add(line);
+    markdownBuffer.add(lines[i]);
     i++;
   }
 
   flushMarkdown();
   return segments;
+}
+
+/// Attempts to parse a definition list beginning at [start].
+///
+/// Returns the parsed list and the index of the first line that follows it,
+/// or `null` when [start] does not begin a valid term/definition pair.
+({DefinitionList list, int nextIndex})? _tryParseDefinitionListAt(
+  List<String> lines,
+  int start,
+) {
+  if (!_isPotentialTerm(lines[start]) || start + 1 >= lines.length) {
+    return null;
+  }
+
+  final firstDefs = _collectDefinitions(lines, start + 1);
+  if (firstDefs.definitions.isEmpty) return null;
+
+  final items = <DefinitionItem>[
+    DefinitionItem(lines[start].trim(), firstDefs.definitions),
+  ];
+  var j = firstDefs.nextIndex;
+
+  while (j < lines.length) {
+    while (j < lines.length && lines[j].trim().isEmpty) {
+      j++;
+    }
+    if (j >= lines.length) break;
+
+    final nextTerm = lines[j];
+    if (!_isPotentialTerm(nextTerm) || j + 1 >= lines.length) break;
+
+    final nextDefs = _collectDefinitions(lines, j + 1);
+    if (nextDefs.definitions.isEmpty) break;
+
+    items.add(DefinitionItem(nextTerm.trim(), nextDefs.definitions));
+    j = nextDefs.nextIndex;
+  }
+
+  return (list: DefinitionList(items), nextIndex: j);
 }
 
 /// Collects consecutive `: definition` lines starting at [fromIndex],

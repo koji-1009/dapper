@@ -1,4 +1,5 @@
 #!/usr/bin/env dart
+
 // Dapper CLI - Format Markdown and YAML files.
 //
 // Usage: dapper [options] <files or directories...>

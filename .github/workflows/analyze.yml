@@ -3,38 +3,39 @@ name: Analyze
 on:
   push:
     branches:
-      - "main"
+      - main
   pull_request:
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
 
 jobs:
   format:
     runs-on: ubuntu-slim
+    timeout-minutes: 10
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
       - uses: dart-lang/setup-dart@7654d458321ee25acccccfdb86cd48bd95768ff1 # v1.8.0
-        with:
-          sdk: stable
       - run: dart pub get
       - run: dart format --output=none --set-exit-if-changed .
       - run: dart run dapper -o none --set-exit-if-changed .
 
   analyze:
     runs-on: ubuntu-slim
+    timeout-minutes: 10
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
       - uses: dart-lang/setup-dart@7654d458321ee25acccccfdb86cd48bd95768ff1 # v1.8.0
-        with:
-          sdk: stable
       - run: dart pub get
       - run: dart analyze
 
   test:
     runs-on: ubuntu-slim
+    timeout-minutes: 10
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
       - uses: dart-lang/setup-dart@7654d458321ee25acccccfdb86cd48bd95768ff1 # v1.8.0
-        with:
-          sdk: stable
       - run: dart pub get
       - run: dart test --coverage=coverage
       - run: dart run coverage:format_coverage --lcov --in=coverage --out=coverage/lcov.info --report-on=lib

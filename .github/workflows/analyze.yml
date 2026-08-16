@@ -11,6 +11,15 @@ concurrency:
   cancel-in-progress: true
 
 jobs:
+  analyze:
+    runs-on: ubuntu-slim
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+      - uses: dart-lang/setup-dart@7654d458321ee25acccccfdb86cd48bd95768ff1 # v1.8.0
+      - run: dart pub get
+      - run: dart analyze
+
   format:
     runs-on: ubuntu-slim
     timeout-minutes: 10
@@ -20,15 +29,6 @@ jobs:
       - run: dart pub get
       - run: dart format --output=none --set-exit-if-changed .
       - run: dart run dapper -o none --set-exit-if-changed .
-
-  analyze:
-    runs-on: ubuntu-slim
-    timeout-minutes: 10
-    steps:
-      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
-      - uses: dart-lang/setup-dart@7654d458321ee25acccccfdb86cd48bd95768ff1 # v1.8.0
-      - run: dart pub get
-      - run: dart analyze
 
   test:
     runs-on: ubuntu-slim

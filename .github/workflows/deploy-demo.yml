@@ -3,7 +3,7 @@ name: Deploy Demo
 on:
   push:
     branches:
-      - "main"
+      - main
   workflow_dispatch:
 
 permissions:
@@ -21,11 +21,10 @@ jobs:
       name: github-pages
       url: ${{ steps.deployment.outputs.page_url }}
     runs-on: ubuntu-slim
+    timeout-minutes: 10
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
       - uses: dart-lang/setup-dart@7654d458321ee25acccccfdb86cd48bd95768ff1 # v1.8.0
-        with:
-          sdk: stable
       - run: dart pub get
       - run: dart compile js -o docs/dapper.js web/main.dart
       - uses: actions/configure-pages@45bfe0192ca1faeb007ade9deae92b16b8254a0d # v6.0.0

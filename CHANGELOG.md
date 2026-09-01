@@ -1,3 +1,9 @@
+## Unreleased
+
+### Changed
+
+* Raise the `glob` constraint to `^2.2.0`. Starting with glob 2.2.0, `**` matches zero directories at the start of a pattern or following a separator, so ignore patterns such as `**/build` now match `build` and `foo/**/bar` now matches `foo/bar`, aligning `IgnorePattern` with git's own gitignore semantics.
+
 ## 1.4.8
 
 ### Changed

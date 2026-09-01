@@ -92,7 +92,8 @@ void main() {
         final pattern = IgnorePattern.parse('**/build')!;
         expect(pattern.matches('src/build', isDirectory: true), isTrue);
         expect(pattern.matches('src/main/build', isDirectory: true), isTrue);
-        expect(pattern.matches('build', isDirectory: true), isFalse);
+        // Leading `**/` also matches zero directories (gitignore semantics).
+        expect(pattern.matches('build', isDirectory: true), isTrue);
       });
 
       test('double asterisk with directory suffix', () {
@@ -105,7 +106,8 @@ void main() {
         final pattern = IgnorePattern.parse('foo/**/bar')!;
         expect(pattern.matches('foo/x/bar', isDirectory: true), isTrue);
         expect(pattern.matches('foo/x/y/bar', isDirectory: true), isTrue);
-        expect(pattern.matches('foo/bar', isDirectory: true), isFalse);
+        // `/**/` also matches zero directories (gitignore semantics).
+        expect(pattern.matches('foo/bar', isDirectory: true), isTrue);
         expect(pattern.matches('bar', isDirectory: true), isFalse);
       });
 

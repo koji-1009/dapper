@@ -2,11 +2,16 @@
 
 ### Fixed
 
-* Fix `MarkdownPrinter` corrupting a link whose visible text is a bare email/URL matching its own target (e.g. `[a@b.com](mailto:a@b.com)`) into a doubly-nested link (`[[a@b.com](mailto:a@b.com)](mailto:a@b.com)`). `package:markdown`'s GFM autolink extension auto-links such text even inside another link's label, producing a nested `a` element; `_renderInlineNode` now renders a link's label with a nested `a` child as plain text instead of re-wrapping it.
+* Fix `MarkdownPrinter` corrupting a link whose label contains auto-linkable email/URL text into a nested link. `package:markdown`'s GFM autolink extension auto-links such text even inside another link's label, producing a nested `a` element that was re-wrapped: `[a@b.com](mailto:a@b.com)` became `[[a@b.com](mailto:a@b.com)](mailto:a@b.com)`, and `[see https://example.com here](https://other.com)` became `[see [https://example.com](https://example.com) here](https://other.com)`. This also made `<a@b.com>` and bare `a@b.com` non-idempotent, since their first-pass output `[a@b.com](mailto:a@b.com)` was corrupted on the next pass. `_renderInlineNode` now renders an `a` nested inside a link's label as plain text instead of re-wrapping it.
 
 ### Changed
 
 * Raise the `glob` constraint to `^2.2.0`. Starting with glob 2.2.0, `**` matches zero directories at the start of a pattern or following a separator, so ignore patterns such as `**/build` now match `build` and `foo/**/bar` now matches `foo/bar`, aligning `IgnorePattern` with git's own gitignore semantics.
+* Restore the whitespace-only line inside the code block of the `handles nested list code block with blank lines` test input, which had been replaced by an empty line, and spell the input out with explicit `\n` escapes so trailing whitespace cannot be stripped from it again.
+
+### Added
+
+* Add tests for a link whose label contains an auto-linked URL mid-text, and for the idempotency of `<a@b.com>` and bare `a@b.com` email autolinks.
 
 ## 1.4.8
 

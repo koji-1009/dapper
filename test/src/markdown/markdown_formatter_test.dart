@@ -92,6 +92,25 @@ void main() {}
       expect(result, isNot(contains('[[support@example.com]')));
     });
 
+    test('does not nest a URL auto-linked mid-text in a link label', () {
+      const input = '[see https://example.com here](https://other.com)';
+      final result = formatter.format(input);
+      expect(result, contains(input));
+      expect(formatter.format(result), result);
+    });
+
+    test('formats an angle-bracket email autolink idempotently', () {
+      final result = formatter.format('<a@b.com>');
+      expect(result, contains('[a@b.com](mailto:a@b.com)'));
+      expect(formatter.format(result), result);
+    });
+
+    test('formats a bare email autolink idempotently', () {
+      final result = formatter.format('mail a@b.com');
+      expect(result, contains('mail [a@b.com](mailto:a@b.com)'));
+      expect(formatter.format(result), result);
+    });
+
     test('formats horizontal rule as ---', () {
       final result = formatter.format('---');
       expect(result.trim(), '---');
@@ -498,15 +517,15 @@ code
       });
 
       test('handles nested list code block with blank lines', () {
-        const input = '''
-* A
-  * A
-  ```
-  code1
-
-  code2
-  ```
-''';
+        // The blank line inside the code block is whitespace-only on purpose.
+        const input =
+            '* A\n'
+            '  * A\n'
+            '  ```\n'
+            '  code1\n'
+            '  \n'
+            '  code2\n'
+            '  ```\n';
         final formatted1 = formatter.format(input);
         final formatted2 = formatter.format(formatted1);
 

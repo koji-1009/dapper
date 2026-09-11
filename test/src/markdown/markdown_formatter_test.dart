@@ -74,6 +74,24 @@ void main() {}
       expect(result, contains('[text](https://example.com)'));
     });
 
+    test('does not corrupt an inline link whose text is its own mailto', () {
+      const input = '[support@example.com](mailto:support@example.com)';
+      final result = formatter.format(input);
+      expect(result, contains(input));
+      expect(result, isNot(contains('[[support@example.com]')));
+    });
+
+    test('does not corrupt a reference link whose text is its own mailto', () {
+      const input =
+          '[support@example.com][1]\n\n[1]: mailto:support@example.com\n';
+      final result = formatter.format(input);
+      expect(
+        result,
+        contains('[support@example.com](mailto:support@example.com)'),
+      );
+      expect(result, isNot(contains('[[support@example.com]')));
+    });
+
     test('formats horizontal rule as ---', () {
       final result = formatter.format('---');
       expect(result.trim(), '---');
@@ -485,7 +503,7 @@ code
   * A
   ```
   code1
-  
+
   code2
   ```
 ''';

@@ -534,15 +534,15 @@ class MarkdownPrinter {
     return '';
   }
 
-  String _renderInlineContent(md.Element element) {
+  String _renderInlineContent(md.Element element, {bool insideLink = false}) {
     final buffer = StringBuffer();
     for (final child in element.children ?? <md.Node>[]) {
-      buffer.write(_renderInlineNode(child));
+      buffer.write(_renderInlineNode(child, insideLink: insideLink));
     }
     return buffer.toString();
   }
 
-  String _renderInlineNode(md.Node node) {
+  String _renderInlineNode(md.Node node, {bool insideLink = false}) {
     if (node is md.Text) {
       return node.textContent;
     }
@@ -551,12 +551,18 @@ class MarkdownPrinter {
         case 'code':
           return '`${_getTextContent(node)}`';
         case 'em':
-          return '_${_renderInlineContent(node)}_';
+          return '_${_renderInlineContent(node, insideLink: insideLink)}_';
         case 'strong':
-          return '**${_renderInlineContent(node)}**';
+          return '**${_renderInlineContent(node, insideLink: insideLink)}**';
         case 'a':
+          // Links can't nest: package:markdown's GFM autolink extension
+          // auto-links bare email/URL text even inside a link's own label
+          // (e.g. `[a@b.com](mailto:a@b.com)`), so drop to plain text here.
+          if (insideLink) {
+            return _getTextContent(node);
+          }
           return _renderLinkLike(
-            '[${_renderInlineContent(node)}]',
+            '[${_renderInlineContent(node, insideLink: true)}]',
             node.attributes['href'] ?? '',
             node.attributes['title'],
           );
@@ -569,7 +575,7 @@ class MarkdownPrinter {
         case 'br':
           return '  \n';
         default:
-          return _renderInlineContent(node);
+          return _renderInlineContent(node, insideLink: insideLink);
       }
     }
     if (node is md.UnparsedContent) {

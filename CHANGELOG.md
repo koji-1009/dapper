@@ -1,5 +1,9 @@
 ## Unreleased
 
+### Fixed
+
+* Fix `MarkdownPrinter` corrupting a link whose visible text is a bare email/URL matching its own target (e.g. `[a@b.com](mailto:a@b.com)`) into a doubly-nested link (`[[a@b.com](mailto:a@b.com)](mailto:a@b.com)`). `package:markdown`'s GFM autolink extension auto-links such text even inside another link's label, producing a nested `a` element; `_renderInlineNode` now renders a link's label with a nested `a` child as plain text instead of re-wrapping it.
+
 ### Changed
 
 * Raise the `glob` constraint to `^2.2.0`. Starting with glob 2.2.0, `**` matches zero directories at the start of a pattern or following a separator, so ignore patterns such as `**/build` now match `build` and `foo/**/bar` now matches `foo/bar`, aligning `IgnorePattern` with git's own gitignore semantics.

@@ -148,6 +148,19 @@ void main() {
       expect(result, contains('[text](url "Title")'));
     });
 
+    test('prints link whose text is itself a nested link as plain text', () {
+      // Simulates package:markdown's GFM autolink extension, which
+      // auto-links bare email/URL text even inside a link's own label.
+      final inner = md.Element('a', [md.Text('a@b.com')]);
+      inner.attributes['href'] = 'mailto:a@b.com';
+      final outer = md.Element('a', [inner]);
+      outer.attributes['href'] = 'mailto:a@b.com';
+      final p = md.Element('p', [outer]);
+      final result = printer.print([p]);
+      expect(result, contains('[a@b.com](mailto:a@b.com)'));
+      expect(result, isNot(contains('[[a@b.com]')));
+    });
+
     test('prints image', () {
       final img = md.Element.empty('img');
       img.attributes['src'] = 'image.png';

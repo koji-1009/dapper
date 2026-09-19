@@ -87,6 +87,8 @@ dart run dapper docs/
 Usage: dapper [options] <files or directories...>
 
 -h, --help                     Print this usage information.
+    --version                  Print the dapper version.
+-v, --verbose                  Show stack traces for unexpected errors.
 -o, --output=<mode>            Set where to write formatted output.
           [write] (default)    Overwrite formatted files on disk.
           [show]               Print code to terminal.
@@ -96,6 +98,16 @@ Usage: dapper [options] <files or directories...>
     --print-width=<int>        Maximum line width. (default: 80)
     --prose-wrap=<mode>        How to wrap prose. [always, never, preserve]
 ```
+
+### Exit Codes
+
+| Code | Meaning                                                   |
+| ---- | --------------------------------------------------------- |
+| `0`  | Success                                                   |
+| `1`  | Files changed (with `--set-exit-if-changed`)              |
+| `64` | Invalid command-line usage                                |
+| `65` | A file or directory could not be found or formatted       |
+| `70` | Unexpected internal error (use `--verbose` for the trace) |
 
 ## Configuration
 

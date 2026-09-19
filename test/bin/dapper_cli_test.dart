@@ -56,8 +56,10 @@ void main() {
   group('ExitCode', () {
     test('has correct values', () {
       expect(ExitCode.success.code, 0);
-      expect(ExitCode.error.code, 1);
       expect(ExitCode.changed.code, 1);
+      expect(ExitCode.usage.code, 64);
+      expect(ExitCode.error.code, 65);
+      expect(ExitCode.software.code, 70);
     });
   });
 
@@ -83,8 +85,8 @@ void main() {
     }
 
     group('run', () {
-      test('returns error when no arguments', () {
-        expect(runQuietly([]).code, 1);
+      test('returns usage error when no arguments', () {
+        expect(runQuietly([]).code, 64);
       });
 
       test('returns success for --help', () {
@@ -92,17 +94,34 @@ void main() {
       });
 
       test('returns error when path not found', () {
-        expect(runQuietly(['nonexistent_path']).code, 1);
+        expect(runQuietly(['nonexistent_path']).code, 65);
       });
 
-      test('returns error for invalid option', () {
+      test('returns usage error for invalid option', () {
         // Unknown flag causes FormatException
-        expect(runQuietly(['--invalid-option']).code, 1);
+        expect(runQuietly(['--invalid-option']).code, 64);
       });
 
-      test('returns error when only flags but no paths', () {
+      test('returns usage error when only flags but no paths', () {
         // Has arguments but no paths (rest is empty)
-        expect(runQuietly(['-o', 'none']).code, 1);
+        expect(runQuietly(['-o', 'none']).code, 64);
+      });
+
+      test('returns usage error for non-integer print-width', () {
+        final file = File('${tempDir.path}/test.md');
+        file.writeAsStringSync('# Hello\n');
+
+        expect(
+          runQuietly(['-o', 'none', '--print-width', 'abc', file.path]).code,
+          64,
+        );
+      });
+
+      test('accepts --verbose', () {
+        final file = File('${tempDir.path}/test.md');
+        file.writeAsStringSync('# Hello\n');
+
+        expect(runQuietly(['-v', '-o', 'none', file.path]).code, 0);
       });
 
       test('returns success for valid markdown file', () {
@@ -363,6 +382,54 @@ ul_style: dash
       return (result, buffer.toString());
     }
 
+    (ExitCode, String, String) runCapturingOutput(List<String> args) {
+      final out = StringBuffer();
+      final err = StringBuffer();
+      final result = IOOverrides.runZoned(
+        () => const DapperCli().run(args),
+        stdout: () => _StringBufferStdout(out),
+        stderr: () => _StringBufferStdout(err),
+      );
+      return (result, out.toString(), err.toString());
+    }
+
+    test('prints usage to stdout for --help', () {
+      final (_, out, err) = runCapturingOutput(['--help']);
+      expect(out, contains('Usage: dapper'));
+      expect(err, isEmpty);
+    });
+
+    test('prints version to stdout for --version', () {
+      final (result, out, _) = runCapturingOutput(['--version']);
+      expect(result, ExitCode.success);
+      expect(out, matches(RegExp(r'^dapper \d+\.\d+\.\d+.*\n$')));
+    });
+
+    test('prints usage to stderr for invalid option', () {
+      final (_, out, err) = runCapturingOutput(['--invalid-option']);
+      expect(out, isEmpty);
+      expect(err, contains('Could not find an option named'));
+      expect(err, contains('Usage: dapper'));
+    });
+
+    test('prints usage to stderr when no arguments', () {
+      final (_, out, err) = runCapturingOutput([]);
+      expect(out, isEmpty);
+      expect(err, contains('No files or directories specified'));
+      expect(err, contains('Usage: dapper'));
+    });
+
+    test('prints usage to stderr for non-integer print-width', () {
+      final (_, out, err) = runCapturingOutput([
+        '--print-width',
+        'abc',
+        tempDir.path,
+      ]);
+      expect(out, isEmpty);
+      expect(err, contains('"abc" is not a valid value'));
+      expect(err, contains('Usage: dapper'));
+    });
+
     test('prints stats in write mode', () {
       final file = File('${tempDir.path}/test.md');
       file.writeAsStringSync('# Hello\n');
@@ -583,7 +650,7 @@ void _testWithMockFileSystem() {
       );
 
       final result = runWithMock(['-o', 'none', '/some/dir'], mockFs);
-      expect(result.code, 1);
+      expect(result.code, 65);
     });
 
     test('returns error when file read fails', () {
@@ -593,7 +660,7 @@ void _testWithMockFileSystem() {
       );
 
       final result = runWithMock(['-o', 'none', '/some/file.md'], mockFs);
-      expect(result.code, 1);
+      expect(result.code, 65);
     });
 
     test('handles file formatting successfully', () {

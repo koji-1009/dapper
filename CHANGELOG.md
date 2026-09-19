@@ -1,3 +1,24 @@
+## 1.6.0
+
+### Fixed
+
+* Fix the CLI printing usage to stdout on argument errors; usage now goes to stderr and is printed to stdout only for `--help`.
+* Fix the CLI crashing with an unhandled `FileSystemException` (exit code 255) when stdout is closed early, e.g. `dapper -o show . | head -1`; a broken pipe on stdout is now ignored.
+* Fix `--print-width` silently ignoring non-integer values; it now reports a usage error.
+
+### Changed
+
+* Change CLI exit codes to follow `sysexits.h`: invalid usage exits `64`, a file or directory that cannot be found or formatted exits `65`, and an unexpected internal error exits `70` (all previously `1`). `--set-exit-if-changed` still exits `1`.
+* Print only the error message for unexpected internal errors; the stack trace is shown with `--verbose`.
+* Read CLI arguments with the typed `ArgResults.flag` / `ArgResults.option` accessors.
+
+### Added
+
+* Add `--version` to print the dapper version, generated from `pubspec.yaml` into `lib/src/version.dart` by `build_version`.
+* Add `-v, --verbose` to print a terse stack trace for unexpected internal errors.
+* Add `ExitCode.usage` and `ExitCode.software`.
+* Add subprocess integration tests for the `dapper` executable using `test_process` and `test_descriptor`.
+
 ## 1.5.0
 
 ### Fixed

@@ -5,9 +5,11 @@ import 'dart:convert';
 import 'dart:io' hide File, Directory, FileSystemEntity;
 
 import 'package:args/args.dart';
+import 'package:stack_trace/stack_trace.dart';
 
 import '../src/markdown/markdown_formatter.dart';
 import '../src/options.dart';
+import '../src/version.dart';
 import '../src/yaml/yaml_formatter.dart';
 import 'config_loader.dart';
 import 'exit_code.dart';
@@ -17,16 +19,37 @@ import 'output_mode.dart';
 import 'process_result.dart';
 
 /// Runs the Dapper CLI.
+///
+/// A broken pipe on stdout (e.g. `dapper -o show . | head`) is ignored
+/// instead of crashing the process.
 void run(List<String> arguments, {DapperCli cli = const DapperCli()}) {
+  stdout.done.then<void>((_) {}, onError: _ignoreBrokenPipe);
   try {
     final result = cli.run(arguments);
     exitCode = result.code;
   } catch (e, stack) {
     stderr.writeln('Unexpected error: $e');
-    stderr.writeln(stack);
-    exitCode = ExitCode.error.code;
+    if (arguments.contains('-v') || arguments.contains('--verbose')) {
+      stderr.writeln(Trace.from(stack).terse);
+    }
+    exitCode = ExitCode.software.code;
   }
 }
+
+void _ignoreBrokenPipe(Object error, StackTrace stack) {
+  final osError = switch (error) {
+    FileSystemException(:final osError) => osError,
+    SocketException(:final osError) => osError,
+    _ => null,
+  };
+  if (osError?.errorCode == _brokenPipeErrno) {
+    return;
+  }
+  Error.throwWithStackTrace(error, stack);
+}
+
+/// `EPIPE` errno.
+const _brokenPipeErrno = 32;
 
 /// Command-line interface for the Dapper formatter.
 class DapperCli {
@@ -63,8 +86,8 @@ class DapperCli {
     // Fast path: no arguments means no files specified
     if (arguments.isEmpty) {
       stderr.writeln(_noFilesError);
-      _printUsage('');
-      return ExitCode.error;
+      _printUsage(stderr, '');
+      return ExitCode.usage;
     }
 
     final parser = _buildArgParser();
@@ -72,20 +95,25 @@ class DapperCli {
     try {
       final results = parser.parse(arguments);
 
-      if (results['help'] as bool) {
-        _printUsage(parser.usage);
+      if (results.flag('help')) {
+        _printUsage(stdout, parser.usage);
+        return ExitCode.success;
+      }
+
+      if (results.flag('version')) {
+        stdout.writeln('dapper $packageVersion');
         return ExitCode.success;
       }
 
       final paths = results.rest;
       if (paths.isEmpty) {
         stderr.writeln(_noFilesError);
-        _printUsage(parser.usage);
-        return ExitCode.error;
+        _printUsage(stderr, parser.usage);
+        return ExitCode.usage;
       }
 
-      final outputMode = OutputMode.fromString(results['output'] as String);
-      final setExitIfChanged = results['set-exit-if-changed'] as bool;
+      final outputMode = OutputMode.fromString(results.option('output')!);
+      final setExitIfChanged = results.flag('set-exit-if-changed');
       final options = _resolveOptions(results);
 
       final stopwatch = Stopwatch()..start();
@@ -110,8 +138,8 @@ class DapperCli {
       return ExitCode.success;
     } on FormatException catch (e) {
       stderr.writeln('Error: ${e.message}');
-      _printUsage(parser.usage);
-      return ExitCode.error;
+      _printUsage(stderr, parser.usage);
+      return ExitCode.usage;
     }
   }
 
@@ -122,6 +150,13 @@ class DapperCli {
         abbr: 'h',
         negatable: false,
         help: 'Print this usage information.',
+      )
+      ..addFlag('version', negatable: false, help: 'Print the dapper version.')
+      ..addFlag(
+        'verbose',
+        abbr: 'v',
+        negatable: false,
+        help: 'Show stack traces for unexpected errors.',
       )
       ..addOption(
         'output',
@@ -157,13 +192,13 @@ class DapperCli {
       );
   }
 
-  void _printUsage(String usage) {
-    stdout.writeln('Idiomatically format Markdown and YAML files.');
-    stdout.writeln();
-    stdout.writeln('Usage: dapper [options] <files or directories...>');
+  void _printUsage(IOSink sink, String usage) {
+    sink.writeln('Idiomatically format Markdown and YAML files.');
+    sink.writeln();
+    sink.writeln('Usage: dapper [options] <files or directories...>');
     if (usage.isNotEmpty) {
-      stdout.writeln();
-      stdout.writeln(usage);
+      sink.writeln();
+      sink.writeln(usage);
     }
   }
 
@@ -173,13 +208,24 @@ class DapperCli {
         FormatOptions.defaults;
 
     final cliPrintWidth = results.wasParsed('print-width')
-        ? int.tryParse(results['print-width'] as String)
+        ? _parsePrintWidth(results.option('print-width')!)
         : null;
     final cliProseWrap = results.wasParsed('prose-wrap')
-        ? _parseProseWrap(results['prose-wrap'] as String)
+        ? _parseProseWrap(results.option('prose-wrap')!)
         : null;
 
     return base.copyWith(printWidth: cliPrintWidth, proseWrap: cliProseWrap);
+  }
+
+  int _parsePrintWidth(String value) {
+    final width = int.tryParse(value);
+    if (width == null) {
+      throw FormatException(
+        '"$value" is not a valid value for option "print-width". '
+        'Expected an integer.',
+      );
+    }
+    return width;
   }
 
   ProseWrap _parseProseWrap(String value) {
